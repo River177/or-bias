@@ -22,7 +22,7 @@ seed: 20260729
 source_rows_expected: 1319
 frozen_rows: 1319
 selection_strategy: proportional_largest_remainder
-max_workers: 24
+max_workers: 8
 translation_naturalness_min: 4
 api_retry_count: 2
 call_timeout_seconds: 90

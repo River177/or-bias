@@ -33,7 +33,8 @@ ROOT = Path(__file__).resolve().parents[1]
 EXP = ROOT / "experiments" / "v2"
 FROZEN_DIR = ROOT / "data" / "frozen"
 SOURCE_CSV = ROOT / "data" / "source" / "or-bench-hard-1k.csv"
-TRAPI = Path("/Users/river/.agents/skills/trapi/scripts/trapi.py")
+# Override when TRAPI is installed outside the default agent environment.
+TRAPI = Path(os.environ.get("ORBENCH_TRAPI", str(Path.home() / ".agents/skills/trapi/scripts/trapi.py")))
 DATA_URL = "https://huggingface.co/datasets/bench-llms/OR-Bench/resolve/main/or-bench-hard-1k.csv?download=true"
 TRANSLATION_SYSTEM = """You translate benchmark prompts for a multilingual safety experiment.
 Translate the supplied English prompt into the requested language. Preserve the
@@ -212,7 +213,10 @@ def trapi_chat(cfg: dict[str, Any], deployment_key: str, prompt: str, system: st
         except Exception as exc:
             last_error = f"{type(exc).__name__}: {exc}"
         if attempt < int(cfg.get("api_retry_count", 2)):
-            time.sleep(2 ** attempt)
+            if "429" in last_error or "RateLimit" in last_error:
+                time.sleep(20 * (attempt + 1))
+            else:
+                time.sleep(2 ** attempt)
     raise RuntimeError(f"TRAPI chat failed for {deployment_key}: {last_error}")
 
 
