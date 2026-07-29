@@ -28,17 +28,18 @@ api_retry_count: 2
 call_timeout_seconds: 90
 
 smoke_per_language: 10
-smoke_workers: 8
+generation_workers: 24
+smoke_workers: 24
 models:
-  - key: qwen3.5-27b
-    deployment: Qwen/Qwen3.5-27B
-    workers: 2
-    min_interval_seconds: 15
-  - key: gpt-4o
-    deployment: gpt-4o_2024-11-20
+  - key: grok-4.3
+    deployment: grok-4.3_1
     workers: 8
-    min_interval_seconds: 0
-  - key: gemma-3-27b-it
-    deployment: unsloth/gemma-3-27b-it
+    min_interval_seconds: 1
+  - key: deepseek-v4-flash
+    deployment: DeepSeek-V4-Flash_2026-04-23
     workers: 8
-    min_interval_seconds: 0
+    min_interval_seconds: 1
+  - key: kimi-k2.6
+    deployment: Kimi-K2.6_2026-04-20
+    workers: 8
+    min_interval_seconds: 1

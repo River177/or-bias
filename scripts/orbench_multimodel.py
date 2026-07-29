@@ -8,10 +8,11 @@ import csv
 import hashlib
 import json
 import math
+import random
 import sys
 import threading
 import time
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
@@ -180,18 +181,18 @@ def call_chat(cfg: dict[str, Any], deployment: str, system: str, user: str) -> t
             last_error = f"{type(exc).__name__}: {exc}"
             if attempt < int(cfg.get("api_retry_count", 2)):
                 if "429" in last_error or "RateLimit" in last_error:
-                    time.sleep(60)
+                    time.sleep(60 * (2 ** attempt) + random.uniform(0, 10))
                 elif "APIConnectionError" in last_error or "Connection error" in last_error:
-                    time.sleep(15 * (attempt + 1))
+                    time.sleep(15 * (attempt + 1) + random.uniform(0, 5))
                 else:
-                    time.sleep(2 ** attempt)
+                    time.sleep(2 ** attempt + random.uniform(0, 2))
     raise RuntimeError(f"TRAPI call failed for {deployment}: {last_error}")
 
 
 def model_dirs() -> dict[str, Path]:
     if MODEL_DIRS:
         return MODEL_DIRS
-    return {"qwen3.5-27b": EXP / "models" / "qwen3.5-27b", "gpt-4o": EXP / "models" / "gpt-4o", "gemma-3-27b-it": EXP / "models" / "gemma-3-27b-it"}
+    raise RuntimeError("Model directories are not initialized; invoke the script through main() with a config")
 
 
 def load_test_rows(cfg: dict[str, Any]) -> list[dict[str, Any]]:
@@ -238,8 +239,9 @@ def write_manifests(rows: list[dict[str, Any]], cfg: dict[str, Any]) -> None:
 
 def generation_tasks(rows: list[dict[str, Any]], cfg: dict[str, Any], pass_name: str) -> list[dict[str, Any]]:
     tasks = []
-    for model in cfg["models"]:
-        for row in rows:
+    # Row-major ordering keeps all models active from the first batch.
+    for row in rows:
+        for model in cfg["models"]:
             tasks.append({"model_key": model["key"], "deployment": model["deployment"], "row": row, "pass": pass_name, "sample_idx": 0})
     return tasks
 
@@ -268,6 +270,52 @@ class RateLimiter:
             self.last_start = time.monotonic()
 
 
+class AdaptiveConcurrency:
+    """Per-model concurrency gate with deterministic 8 -> 4 -> 2 -> 1 fallback."""
+
+    def __init__(self, initial: int = 8):
+        self._target = initial
+        self._active = 0
+        self._recent: deque[bool] = deque(maxlen=20)
+        self._retryable_streak = 0
+        self._lock = threading.Condition()
+
+    @property
+    def target(self) -> int:
+        with self._lock:
+            return self._target
+
+    def acquire(self) -> None:
+        with self._lock:
+            while self._active >= self._target:
+                self._lock.wait()
+            self._active += 1
+
+    def release(self) -> None:
+        with self._lock:
+            self._active -= 1
+            self._lock.notify_all()
+
+    def record(self, success: bool, retryable: bool) -> bool:
+        with self._lock:
+            self._recent.append(not success)
+            self._retryable_streak = self._retryable_streak + 1 if retryable else 0
+            should_reduce = self._retryable_streak >= 3 or (
+                len(self._recent) == 20 and sum(self._recent) / 20 > 0.10
+            )
+            if should_reduce and self._target > 1:
+                self._target = max(1, self._target // 2)
+                self._retryable_streak = 0
+                self._lock.notify_all()
+                return True
+            return False
+
+
+def is_retryable_error(error: str) -> bool:
+    lowered = error.lower()
+    return "429" in lowered or "ratelimit" in lowered or "timeout" in lowered or "connection" in lowered
+
+
 def run_generations(cfg: dict[str, Any], pass_name: str) -> None:
     rows = read_jsonl(EXP / ("smoke_manifest.jsonl" if pass_name == "smoke" else "full_manifest.jsonl"))
     tasks = generation_tasks(rows, cfg, pass_name)
@@ -293,8 +341,9 @@ def run_generations(cfg: dict[str, Any], pass_name: str) -> None:
             existing.add((model_key, row.get("prompt_id"), row.get("language"), int(row.get("sample_idx", 0))))
     tasks = [task for task in tasks if (task["model_key"], task["row"]["prompt_id"], task["row"]["language"], task["sample_idx"]) not in existing]
 
-    model_limits = {model["key"]: threading.Semaphore(int(model.get("workers", 4))) for model in cfg["models"]}
+    model_limits = {model["key"]: AdaptiveConcurrency(int(model.get("workers", 8))) for model in cfg["models"]}
     model_rate_limiters = {model["key"]: RateLimiter(float(model.get("min_interval_seconds", 0))) for model in cfg["models"]}
+    write_locks = {model["key"]: threading.Lock() for model in cfg["models"]}
 
     generation_cfg = dict(cfg)
 
@@ -302,21 +351,33 @@ def run_generations(cfg: dict[str, Any], pass_name: str) -> None:
         row = task["row"]
         model_key = task["model_key"]
         generation_id = f"{model_key}:{row['prompt_id']}:{row['language']}:{task['sample_idx']}"
-        with model_limits[model_key]:
+        model_limits[model_key].acquire()
+        try:
             model_rate_limiters[model_key].wait()
             try:
                 raw, metadata = call_chat(generation_cfg, task["deployment"], str(cfg["system_prompt"]), row["prompt"])
-                return {"model_key": model_key, "target_deployment": task["deployment"], "generation_id": generation_id, "prompt_id": row["prompt_id"], "category": row["category"], "language": row["language"], "prompt": row["prompt"], "source_prompt": row["source_prompt"], "sample_idx": task["sample_idx"], "system_prompt": cfg["system_prompt"], "response": raw, "pass": task["pass"], "generation_error": False, "trapi": metadata}
+                return {"model_key": model_key, "target_deployment": task["deployment"], "generation_id": generation_id, "prompt_id": row["prompt_id"], "category": row["category"], "language": row["language"], "prompt": row["prompt"], "source_prompt": row["source_prompt"], "sample_idx": task["sample_idx"], "system_prompt": cfg["system_prompt"], "response": raw, "pass": task["pass"], "generation_error": False, "trapi": metadata, "_retryable": False}
             except Exception as exc:
-                return {"model_key": model_key, "target_deployment": task["deployment"], "generation_id": generation_id, "prompt_id": row["prompt_id"], "category": row["category"], "language": row["language"], "prompt": row["prompt"], "source_prompt": row["source_prompt"], "sample_idx": task["sample_idx"], "system_prompt": cfg["system_prompt"], "response": "", "pass": task["pass"], "generation_error": True, "error_type": type(exc).__name__, "error": str(exc)}
+                error = f"{type(exc).__name__}: {exc}"
+                return {"model_key": model_key, "target_deployment": task["deployment"], "generation_id": generation_id, "prompt_id": row["prompt_id"], "category": row["category"], "language": row["language"], "prompt": row["prompt"], "source_prompt": row["source_prompt"], "sample_idx": task["sample_idx"], "system_prompt": cfg["system_prompt"], "pass": task["pass"], "generation_error": True, "error_type": type(exc).__name__, "error": error, "_retryable": is_retryable_error(error)}
+        finally:
+            model_limits[model_key].release()
 
-    with ThreadPoolExecutor(max_workers=int(cfg["smoke_workers"])) as pool:
+    with ThreadPoolExecutor(max_workers=int(cfg.get("generation_workers", cfg.get("smoke_workers", 24)))) as pool:
         futures = [pool.submit(worker, task) for task in tasks]
         for future in as_completed(futures):
             result = future.result()
-            append_jsonl(generation_path(result["model_key"]), result)
-            print(json.dumps({"generated": result["generation_id"], "error": result["generation_error"]}, ensure_ascii=False), flush=True)
-    print(json.dumps({"pass": pass_name, "submitted": len(tasks), "total_expected": len(rows) * len(cfg["models"])}, ensure_ascii=False))
+            model_key = result["model_key"]
+            retryable = bool(result.pop("_retryable", False))
+            reduced = model_limits[model_key].record(not result["generation_error"], retryable)
+            if result["generation_error"]:
+                with write_locks[model_key]:
+                    append_jsonl(generation_error_path(model_key), result)
+            else:
+                with write_locks[model_key]:
+                    append_jsonl(generation_path(model_key), result)
+            print(json.dumps({"generated": result["generation_id"], "error": result["generation_error"], "model": model_key, "workers": model_limits[model_key].target, "concurrency_reduced": reduced}, ensure_ascii=False), flush=True)
+    print(json.dumps({"pass": pass_name, "submitted": len(tasks), "total_expected": len(rows) * len(cfg["models"]), "workers": {key: gate.target for key, gate in model_limits.items()}}, ensure_ascii=False))
 
 
 def judgment_path(model_key: str) -> Path:

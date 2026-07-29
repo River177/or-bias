@@ -55,8 +55,24 @@ class PipelineUnitTests(unittest.TestCase):
 
     def test_multimodel_config_has_three_canonical_models(self):
         cfg = multimodel.load_simple_yaml(Path(__file__).parents[1] / "configs" / "orbench_multilingual_v2.yaml")
-        self.assertEqual({model["key"] for model in cfg["models"]}, {"qwen3.5-27b", "gpt-4o", "gemma-3-27b-it"})
+        self.assertEqual({model["key"] for model in cfg["models"]}, {"grok-4.3", "deepseek-v4-flash", "kimi-k2.6"})
+        self.assertEqual({model["workers"] for model in cfg["models"]}, {8})
+        self.assertEqual(cfg["generation_workers"], 24)
         self.assertEqual(cfg["languages"], ["en", "zh", "ja", "ko", "sv", "da", "ta", "mn", "sw"])
+
+    def test_generation_tasks_interleave_models(self):
+        cfg = {"models": [{"key": "a", "deployment": "a"}, {"key": "b", "deployment": "b"}]}
+        rows = [{"prompt_id": "1"}, {"prompt_id": "2"}]
+        tasks = multimodel.generation_tasks(rows, cfg, "smoke")
+        self.assertEqual([(t["row"]["prompt_id"], t["model_key"]) for t in tasks], [("1", "a"), ("1", "b"), ("2", "a"), ("2", "b")])
+
+    def test_adaptive_concurrency_halves_after_retryable_failures(self):
+        gate = multimodel.AdaptiveConcurrency(8)
+        self.assertEqual(gate.target, 8)
+        self.assertFalse(gate.record(False, True))
+        self.assertFalse(gate.record(False, True))
+        self.assertTrue(gate.record(False, True))
+        self.assertEqual(gate.target, 4)
 
     def test_llm_callers_do_not_set_client_token_limits(self):
         pipeline_source = Path(pipeline.__file__).read_text(encoding="utf-8")
