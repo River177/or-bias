@@ -1,0 +1,32 @@
+# Local credentials and environments
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.DS_Store
+
+# Runtime logs and temporary files
+*.log
+*.tmp
+*.swp
+
+# Large or mutable model artifacts
+experiments/v2/generations*.jsonl
+experiments/v2/response_judgments*.jsonl
+experiments/v2/generation_errors*.jsonl
+experiments/v2/response_judge_errors*.jsonl
+experiments/v2/checkpoint*.jsonl
+experiments/v2/archive/
+experiments/v2/models/
+
+# Historical raw artifacts kept outside Git
+archive/legacy-v0-v1/raw/
+archive/legacy-v0-v1/**/*.jsonl
+
+# Local generated reports
+experiments/v2/summary/*.csv
+experiments/v2/summary/*.md

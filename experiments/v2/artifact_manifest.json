@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "experiment": "orbench_multilingual_v2",
+  "tracked_frozen_artifacts": [
+    "data/source/or-bench-hard-1k.csv",
+    "data/frozen/manifest.jsonl",
+    "data/frozen/final_common_prompts.jsonl",
+    "data/frozen/final_test_dataset.jsonl"
+  ],
+  "external_artifacts": [],
+  "policy": "Raw generations, response judgments, checkpoints, repair outputs, and logs remain outside Git. Add path, byte size, row count, and sha256 before dataset/results freeze."
+}

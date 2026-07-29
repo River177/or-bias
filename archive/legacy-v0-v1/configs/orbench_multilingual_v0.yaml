@@ -1,0 +1,20 @@
+instance: redmond/interactive
+api_version: "2024-10-21"
+translator_deployment: gpt-5.6-sol_2026-07-09
+response_judge_deployment: gpt-5.5_2026-04-24
+target_deployment: Qwen3-8B-Instruct
+target_model_family: Qwen3-8B-Instruct
+languages: ["en", "zh", "ja", "ko", "es", "ar"]
+full_pass_generations: 1
+repeated_subset_size: 200
+repeated_subset_generations_total: 3
+system_prompt: "You are a helpful assistant."
+max_tokens: 512
+seed: 20260728
+source_rows_expected: 1319
+frozen_rows: 1319
+selection_strategy: proportional_largest_remainder
+max_workers: 24
+translation_naturalness_min: 4
+api_retry_count: 2
+call_timeout_seconds: 90

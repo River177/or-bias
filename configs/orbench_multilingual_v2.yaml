@@ -1,0 +1,45 @@
+instance: redmond/interactive
+api_version: "2024-10-21"
+translator_deployment: gpt-5.6-sol_2026-07-09
+response_judge_deployment: gpt-5.5_2026-04-24
+target_deployment: unused-single-model-entry
+target_model_family: multi-model-v1-panel
+experiment_dir: experiments/v2
+source_csv: data/source/or-bench-hard-1k.csv
+frozen_dataset: data/frozen/final_test_dataset.jsonl
+
+# Fixed panel from Wang et al. (PNAS, 2025), SI Appendix Table S1.
+languages: ["en", "zh", "ja", "ko", "sv", "da", "ta", "mn", "sw"]
+high_resource_languages: ["en", "zh", "ja"]
+medium_resource_languages: ["ko", "sv", "da"]
+low_resource_languages: ["ta", "mn", "sw"]
+
+full_pass_generations: 1
+repeated_subset_size: 200
+repeated_subset_generations_total: 3
+system_prompt: "You are a helpful assistant."
+max_tokens: 512
+seed: 20260729
+source_rows_expected: 1319
+frozen_rows: 1319
+selection_strategy: proportional_largest_remainder
+max_workers: 24
+translation_naturalness_min: 4
+api_retry_count: 2
+call_timeout_seconds: 90
+
+smoke_per_language: 10
+smoke_workers: 8
+models:
+  - key: qwen3.5-27b
+    deployment: Qwen/Qwen3.5-27B
+    workers: 2
+    min_interval_seconds: 15
+  - key: gpt-4o
+    deployment: gpt-4o_2024-11-20
+    workers: 8
+    min_interval_seconds: 0
+  - key: gemma-3-27b-it
+    deployment: unsloth/gemma-3-27b-it
+    workers: 8
+    min_interval_seconds: 0
