@@ -58,6 +58,13 @@ class PipelineUnitTests(unittest.TestCase):
         self.assertEqual({model["key"] for model in cfg["models"]}, {"qwen3.5-27b", "gpt-4o", "gemma-3-27b-it"})
         self.assertEqual(cfg["languages"], ["en", "zh", "ja", "ko", "sv", "da", "ta", "mn", "sw"])
 
+    def test_llm_callers_do_not_set_client_token_limits(self):
+        pipeline_source = Path(pipeline.__file__).read_text(encoding="utf-8")
+        multimodel_source = Path(multimodel.__file__).read_text(encoding="utf-8")
+        for source in (pipeline_source, multimodel_source):
+            self.assertNotIn("max_completion_tokens", source)
+            self.assertNotIn('kwargs["max_tokens"]', source)
+
 
 if __name__ == "__main__":
     unittest.main()

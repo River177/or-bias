@@ -18,7 +18,6 @@ full_pass_generations: 1
 repeated_subset_size: 200
 repeated_subset_generations_total: 3
 system_prompt: "You are a helpful assistant."
-max_tokens: 512
 seed: 20260729
 source_rows_expected: 1319
 frozen_rows: 1319

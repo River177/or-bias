@@ -203,11 +203,6 @@ def trapi_chat(cfg: dict[str, Any], deployment_key: str, prompt: str, system: st
                 "model": deployment,
                 "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}],
             }
-            # GPT-5/o-series deployments reject custom temperature and use this name.
-            if deployment.lower().startswith(("gpt-5", "o1", "o3", "o4")):
-                kwargs["max_completion_tokens"] = int(cfg.get("max_tokens", 512))
-            else:
-                kwargs["max_tokens"] = int(cfg.get("max_tokens", 512))
             response = client.chat.completions.create(**kwargs)
             content = response.choices[0].message.content or ""
             if not content:
@@ -519,7 +514,7 @@ def cmd_generate(cfg: dict[str, Any], subset: bool, repeat_extra: int) -> None:
             start = 0 if not subset else 1
             stop = start + n_extra
             tasks.extend((pid, language, prompt, sample_idx) for sample_idx in range(start, stop) if (pid, language, sample_idx) not in done)
-    generation_cfg = {**cfg, "omit_max_tokens": True}
+    generation_cfg = dict(cfg)
 
     def worker(task):
         pid, language, prompt, sample_idx = task

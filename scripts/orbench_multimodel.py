@@ -170,11 +170,6 @@ def call_chat(cfg: dict[str, Any], deployment: str, system: str, user: str) -> t
                 "model": deployment,
                 "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
             }
-            if not cfg.get("omit_max_tokens"):
-                if deployment.lower().startswith(("gpt-5", "o1", "o3", "o4")):
-                    kwargs["max_completion_tokens"] = int(cfg["max_tokens"])
-                else:
-                    kwargs["max_tokens"] = int(cfg["max_tokens"])
             response = client.chat.completions.create(**kwargs)
             content = response.choices[0].message.content or ""
             if not content:
@@ -301,7 +296,7 @@ def run_generations(cfg: dict[str, Any], pass_name: str) -> None:
     model_limits = {model["key"]: threading.Semaphore(int(model.get("workers", 4))) for model in cfg["models"]}
     model_rate_limiters = {model["key"]: RateLimiter(float(model.get("min_interval_seconds", 0))) for model in cfg["models"]}
 
-    generation_cfg = {**cfg, "omit_max_tokens": True}
+    generation_cfg = dict(cfg)
 
     def worker(task: dict[str, Any]) -> dict[str, Any]:
         row = task["row"]
@@ -393,7 +388,7 @@ def run_response_judgments(cfg: dict[str, Any], pass_name: str) -> None:
         raw = ""
         metadata: dict[str, Any] = {}
         try:
-            judge_cfg = {**cfg, "omit_max_tokens": True}
+            judge_cfg = dict(cfg)
             raw, metadata = call_chat(judge_cfg, str(cfg["response_judge_deployment"]), RESPONSE_JUDGE_SYSTEM,
                                       orbench_response_judge_prompt(generation["prompt"], generation["response"]))
             classification, rationale = parse_orbench_classification(raw)

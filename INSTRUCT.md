@@ -42,6 +42,8 @@ raw generations、response judgments、checkpoint 和 repair/archive JSONL 不
 - 安装依赖：`python3 -m pip install -r requirements.txt`。
 - TRAPI/Azure 身份认证必须由本机环境提供；不要把 token、凭证或 `.env` 提交到仓库。
 - 所有 deployment 必须先通过 TRAPI 查询确认，配置中的逻辑名称不能被静默替换。
+- 所有 LLM 调用都不发送 `max_tokens` 或 `max_completion_tokens`；不要重新加入
+  token 上限参数。若服务端自身有默认上限，应在运行记录中注明，那不是客户端配置。
 
 运行前建议检查：
 
