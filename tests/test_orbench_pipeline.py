@@ -56,8 +56,8 @@ class PipelineUnitTests(unittest.TestCase):
     def test_multimodel_config_has_three_canonical_models(self):
         cfg = multimodel.load_simple_yaml(Path(__file__).parents[1] / "configs" / "orbench_multilingual_v2.yaml")
         self.assertEqual({model["key"] for model in cfg["models"]}, {"grok-4.3", "deepseek-v4-flash", "kimi-k2.6"})
-        self.assertEqual({model["workers"] for model in cfg["models"]}, {8})
-        self.assertEqual(cfg["generation_workers"], 24)
+        self.assertEqual({model["workers"] for model in cfg["models"]}, {12})
+        self.assertEqual(cfg["generation_workers"], 32)
         self.assertEqual(cfg["languages"], ["en", "zh", "ja", "ko", "sv", "da", "ta", "mn", "sw"])
 
     def test_generation_tasks_interleave_models(self):
