@@ -28,8 +28,8 @@ api_retry_count: 2
 call_timeout_seconds: 90
 
 smoke_per_language: 10
-generation_workers: 32
-smoke_workers: 32
+generation_workers: 64
+smoke_workers: 64
 models:
   - key: grok-4.3
     deployment: grok-4.3_1
@@ -45,5 +45,5 @@ models:
     min_interval_seconds: 1
   - key: gpt-4o
     deployment: gpt-4o_2024-11-20
-    workers: 8
+    workers: 64
     min_interval_seconds: 0
