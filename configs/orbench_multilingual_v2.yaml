@@ -43,3 +43,7 @@ models:
     deployment: Kimi-K2.6_2026-04-20
     workers: 12
     min_interval_seconds: 1
+  - key: gpt-4o
+    deployment: gpt-4o_2024-11-20
+    workers: 8
+    min_interval_seconds: 0
