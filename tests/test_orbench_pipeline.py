@@ -13,7 +13,7 @@ import orbench_panel_report as panel_report  # noqa: E402
 
 class PipelineUnitTests(unittest.TestCase):
     def test_config_parser_preserves_languages_and_exact_system_prompt(self):
-        cfg = pipeline.load_simple_yaml(Path(__file__).parents[1] / "configs" / "orbench_multilingual_v2.yaml")
+        cfg = pipeline.load_simple_yaml(Path(__file__).parents[1] / "configs" / "experiments" / "orbench-v2.yaml")
         self.assertEqual(cfg["languages"], ["en", "zh", "ja", "ko", "sv", "da", "ta", "mn", "sw"])
         self.assertEqual(cfg["high_resource_languages"], ["en", "zh", "ja"])
         self.assertEqual(cfg["medium_resource_languages"], ["ko", "sv", "da"])
@@ -40,7 +40,7 @@ class PipelineUnitTests(unittest.TestCase):
         self.assertGreaterEqual(high, 0.5)
 
     def test_prepare_uses_current_full_snapshot(self):
-        cfg = pipeline.load_simple_yaml(Path(__file__).parents[1] / "configs" / "orbench_multilingual_v2.yaml")
+        cfg = pipeline.load_simple_yaml(Path(__file__).parents[1] / "configs" / "experiments" / "orbench-v2.yaml")
         with tempfile.TemporaryDirectory() as tmp:
             old_exp = pipeline.EXP
             old_frozen = pipeline.FROZEN_DIR
@@ -56,7 +56,7 @@ class PipelineUnitTests(unittest.TestCase):
                 pipeline.FROZEN_DIR = old_frozen
 
     def test_multimodel_config_has_eleven_canonical_models(self):
-        cfg = multimodel.load_simple_yaml(Path(__file__).parents[1] / "configs" / "orbench_multilingual_v2.yaml")
+        cfg = multimodel.load_simple_yaml(Path(__file__).parents[1] / "configs" / "experiments" / "orbench-v2.yaml")
         expected = {
             "grok-4.3": "grok-4.3_1",
             "deepseek-v4-flash": "DeepSeek-V4-Flash_2026-04-23",
@@ -101,7 +101,7 @@ class PipelineUnitTests(unittest.TestCase):
         self.assertEqual(resumed.to_dict()["algorithm"], "tcp-reno-aimd-v1")
 
     def test_smoke_manifest_has_ten_rows_per_language_and_all_categories(self):
-        cfg = multimodel.load_simple_yaml(Path(__file__).parents[1] / "configs" / "orbench_multilingual_v2.yaml")
+        cfg = multimodel.load_simple_yaml(Path(__file__).parents[1] / "configs" / "experiments" / "orbench-v2.yaml")
         rows = multimodel.load_test_rows(cfg)
         smoke = multimodel.select_smoke_rows(rows, cfg)
         self.assertEqual(len(smoke), 90)

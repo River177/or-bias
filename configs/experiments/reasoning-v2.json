@@ -1,10 +1,10 @@
 {
   "instance": "redmond/interactive",
   "api_version": "2024-10-21",
-  "frozen_dataset": "data/frozen/final_test_dataset.jsonl",
-  "full_manifest": "experiments/v2/full_manifest.jsonl",
-  "smoke_manifest": "experiments/v2/smoke_manifest.jsonl",
-  "output_dir": "experiments/v2/reasoning",
+  "frozen_dataset": "data/frozen/orbench-v2/final_test_dataset.jsonl",
+  "full_manifest": "data/frozen/orbench-v2/final_test_dataset.jsonl",
+  "smoke_manifest": "data/frozen/orbench-v2/smoke_manifest.jsonl",
+  "output_dir": "runs/orbench-reasoning-v2",
   "expected_dataset_sha256": "c9c36a3ffca082c3e111de3551bab22a400e3ef9bc9cde5dfa9da2e727eac349",
   "system_prompt": "You are a helpful assistant.",
   "response_judge_deployment": "gpt-5.5_2026-04-24",
@@ -93,13 +93,13 @@
       "key": "gpt-5.6-sol-medium",
       "family": "gpt-5.6-sol",
       "effort": "medium",
-      "directory": "experiments/v2/models/gpt-5.6-sol"
+      "directory": "runs/orbench-v2/models/gpt-5.6-sol"
     },
     {
       "key": "gpt-5.5-medium",
       "family": "gpt-5.5",
       "effort": "medium",
-      "directory": "experiments/v2/models/gpt-5.5"
+      "directory": "runs/orbench-v2/models/gpt-5.5"
     }
   ]
 }

@@ -1,0 +1,38 @@
+{
+  "schema_version": "multilingual-translation-v1",
+  "prompt_version": "orbench-translation-prompt-v1",
+  "instance": "redmond/interactive",
+  "api_version": "2024-10-21",
+  "translator_deployment": "gpt-5.6-sol_2026-07-09",
+  "translation_judge_deployment": "gpt-5.5_2026-04-24",
+  "languages": ["en", "zh", "ja", "ko", "sv", "da", "ta", "mn", "sw"],
+  "skip_datasets": ["orbench"],
+  "orbench_reuse": {
+    "manifest": "data/frozen/orbench-v2/manifest.jsonl",
+    "translations": "artifact:audit/orbench-v2/translations.jsonl",
+    "judgments": "artifact:audit/orbench-v2/translation_judgments.jsonl",
+    "expected_source_rows": 1319,
+    "expected_pair_rows": 10552
+  },
+  "smoke_per_dataset": 10,
+  "artifact_root": "runs/external-translation-v1",
+  "max_attempts": 3,
+  "request_timeout_seconds": 180,
+  "translation_naturalness_min": 4,
+  "controller": {
+    "initial_cwnd": 4,
+    "ssthresh": 32,
+    "min_cwnd": 1,
+    "max_cwnd": 64,
+    "window_size": 50
+  },
+  "datasets": [
+    {"key": "bio_overrefusal", "path": "artifact:raw/external-overrefusal/unified/datasets/bio_overrefusal.jsonl", "rows": 201},
+    {"key": "xstest", "path": "artifact:raw/external-overrefusal/unified/datasets/xstest.jsonl", "rows": 250},
+    {"key": "oktest", "path": "artifact:raw/external-overrefusal/unified/datasets/oktest.jsonl", "rows": 340},
+    {"key": "phtest", "path": "artifact:raw/external-overrefusal/unified/datasets/phtest.jsonl", "rows": 2072},
+    {"key": "falsereject", "path": "artifact:raw/external-overrefusal/unified/datasets/falsereject.jsonl", "rows": 15811},
+    {"key": "overbench", "path": "artifact:raw/external-overrefusal/unified/datasets/overbench.jsonl", "rows": 29969},
+    {"key": "health_orsc", "path": "artifact:raw/external-overrefusal/unified/datasets/health_orsc.jsonl", "rows": 31920}
+  ]
+}

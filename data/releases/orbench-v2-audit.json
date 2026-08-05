@@ -1,0 +1,17 @@
+{
+  "schema_version": "orbias-release-v1",
+  "repository": "River177/or-bias",
+  "tag": "orbench-v2-audit",
+  "draft": true,
+  "assets": [
+    {"name": "translations.jsonl", "url": "https://github.com/River177/or-bias/releases/download/orbench-v2-audit/translations.jsonl", "sha256": "623bf825375b3fc49cd03b56e361da2d91b4099167baadfe55e504a98e6dc7d4", "destination": "audit/orbench-v2/translations.jsonl"},
+    {"name": "translation_judgments.jsonl", "url": "https://github.com/River177/or-bias/releases/download/orbench-v2-audit/translation_judgments.jsonl", "sha256": "84242b47b8a52826c3b29f4899f4e94c79af299a96dbb3a1dd1c8d09f1fd8ac6", "destination": "audit/orbench-v2/translation_judgments.jsonl"},
+    {"name": "audit_manifest.json", "url": "https://github.com/River177/or-bias/releases/download/orbench-v2-audit/audit_manifest.json", "sha256": "4c879fd3987b966c82a6239439c63983b6170f1500fca51b17404faf77083d67", "destination": "audit/orbench-v2/audit_manifest.json"},
+    {"name": "SHA256SUMS", "url": "https://github.com/River177/or-bias/releases/download/orbench-v2-audit/SHA256SUMS", "sha256": "cc5033980f8496a562c363c7b17af7d9831b984b26d94abae101e243bfa2b7b5", "destination": "audit/orbench-v2/SHA256SUMS"}
+  ],
+  "installed_files": [
+    {"path": "audit/orbench-v2/translations.jsonl", "sha256": "623bf825375b3fc49cd03b56e361da2d91b4099167baadfe55e504a98e6dc7d4"},
+    {"path": "audit/orbench-v2/translation_judgments.jsonl", "sha256": "84242b47b8a52826c3b29f4899f4e94c79af299a96dbb3a1dd1c8d09f1fd8ac6"},
+    {"path": "audit/orbench-v2/audit_manifest.json", "sha256": "4c879fd3987b966c82a6239439c63983b6170f1500fca51b17404faf77083d67"}
+  ]
+}

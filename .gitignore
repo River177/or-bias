@@ -32,9 +32,11 @@ data/external/
 archive/legacy-v0-v1/raw/
 archive/legacy-v0-v1/**/*.jsonl
 
-# Multilingual translation raw and generated data artifacts
-artifacts/multilingual-v1/full/
-artifacts/multilingual-v1/final/datasets/
+# Runtime artifact trees live in ../or-bias-artifacts
+artifacts/
+data/frozen/external-overrefusal-v1/datasets/
+experiments/v2/translations.jsonl
+experiments/v2/translation_judgments.jsonl
 
 # Local generated reports
 experiments/v2/summary/*.csv

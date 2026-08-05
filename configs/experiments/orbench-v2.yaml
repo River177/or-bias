@@ -4,9 +4,10 @@ translator_deployment: gpt-5.6-sol_2026-07-09
 response_judge_deployment: gpt-5.5_2026-04-24
 target_deployment: unused-single-model-entry
 target_model_family: multi-model-v1-panel
-experiment_dir: experiments/v2
+experiment_dir: runs/orbench-v2
 source_csv: data/source/or-bench-hard-1k.csv
-frozen_dataset: data/frozen/final_test_dataset.jsonl
+frozen_dir: data/frozen/orbench-v2
+frozen_dataset: data/frozen/orbench-v2/final_test_dataset.jsonl
 
 # Fixed panel from Wang et al. (PNAS, 2025), SI Appendix Table S1.
 languages: ["en", "zh", "ja", "ko", "sv", "da", "ta", "mn", "sw"]

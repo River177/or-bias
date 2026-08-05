@@ -85,7 +85,7 @@ Refusal Rate = benign prompts judged as refusal / valid benign responses
 可复现配置和命令为：
 
 ```text
-configs/external_overrefusal_selection.json
+configs/datasets/external-overrefusal-v1.json
 python3 scripts/prepare_external_overrefusal.py
 ```
 

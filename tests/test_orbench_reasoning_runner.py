@@ -14,7 +14,7 @@ SPEC.loader.exec_module(runner)
 
 class ReasoningRunnerTests(unittest.TestCase):
     def setUp(self):
-        self.cfg = runner.load_json(ROOT / "configs" / "orbench_reasoning_v2.json")
+        self.cfg = runner.load_json(ROOT / "configs" / "experiments" / "reasoning-v2.json")
 
     def test_config_has_nine_isolated_conditions_and_two_baselines(self):
         keys = {condition["key"] for condition in self.cfg["conditions"]}

@@ -1,7 +1,7 @@
 {
   "artifact_root": "artifacts/multilingual-v1/full",
   "complete_with_approved_exclusions": true,
-  "config": "configs/multilingual_translation_v1.json",
+  "config": "configs/experiments/external-translation-v1.json",
   "datasets": [
     {
       "approved_missing_judgments": [],
@@ -225,7 +225,7 @@
     "reason": "User approved excluding the two records after three consecutive zero-progress retry rounds against the frozen judge deployment.",
     "schema_version": "multilingual-translation-exclusions-v1"
   },
-  "exclusions": "configs/multilingual_translation_exclusions_v1.json",
+  "exclusions": "configs/policies/translation-exclusions-v1.json",
   "languages": [
     "en",
     "zh",

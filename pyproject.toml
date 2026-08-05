@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orbias"
+version = "0.2.0"
+description = "Reproducible multilingual over-refusal benchmark pipelines"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "PyYAML>=6.0",
+  "openai>=1.0",
+  "azure-identity>=1.15",
+  "requests>=2.31",
+]
+
+[project.scripts]
+orbias = "orbias.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "scripts"]

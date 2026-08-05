@@ -252,8 +252,8 @@ FalseReject 的 strict-keep pair 分母仍使用完整预期 126,488，因此两
 
 ### 配置、代码和说明
 
-- 运行配置：`configs/multilingual_translation_v1.json`
-- 批准排除清单：`configs/multilingual_translation_exclusions_v1.json`
+- 运行配置：`configs/experiments/external-translation-v1.json`
+- 批准排除清单：`configs/policies/translation-exclusions-v1.json`
 - 远程 runner：`scripts/multilingual_translation_runner.py`
 - 最终导出器：`scripts/finalize_multilingual_translation.py`
 - 导出器测试：`tests/test_finalize_multilingual_translation.py`

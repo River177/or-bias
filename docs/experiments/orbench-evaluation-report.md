@@ -24,7 +24,7 @@
 | 属性 | 设置 |
 |---|---|
 | Benchmark | OR-Bench harmless-side |
-| 冻结数据 | `data/frozen/final_test_dataset.jsonl` |
+| 冻结数据 | `data/frozen/orbench-v2/final_test_dataset.jsonl` |
 | 生成请求 | 6,336 |
 | 高资源语言 | English (`en`)、Chinese (`zh`)、Japanese (`ja`) |
 | 中资源语言 | Korean (`ko`)、Swedish (`sv`)、Danish (`da`) |
