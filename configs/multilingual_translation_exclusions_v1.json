@@ -1,0 +1,28 @@
+{
+  "schema_version": "multilingual-translation-exclusions-v1",
+  "decision_date": "2026-08-04",
+  "decision": "exclude_missing_translation_judgments",
+  "reason": "User approved excluding the two records after three consecutive zero-progress retry rounds against the frozen judge deployment.",
+  "excluded_keys": [
+    {
+      "dataset": "falsereject",
+      "record_id": "falsereject-all:train:row-001878",
+      "language": "sw",
+      "stage": "translation_judge",
+      "error_kind": "nonretryable",
+      "error_type": "BadRequestError",
+      "error_code": "invalid_prompt",
+      "error_summary": "HTTP 400 biology safety filter"
+    },
+    {
+      "dataset": "falsereject",
+      "record_id": "falsereject-all:train:row-002186",
+      "language": "mn",
+      "stage": "translation_judge",
+      "error_kind": "nonretryable",
+      "error_type": "BadRequestError",
+      "error_code": "invalid_prompt",
+      "error_summary": "HTTP 400 biology safety filter"
+    }
+  ]
+}

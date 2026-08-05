@@ -1,0 +1,250 @@
+{
+  "artifact_root": "artifacts/multilingual-v1/full",
+  "complete_with_approved_exclusions": true,
+  "config": "configs/multilingual_translation_v1.json",
+  "datasets": [
+    {
+      "approved_missing_judgments": [],
+      "artifact_path": "artifacts/multilingual-v1/full/bio_overrefusal",
+      "common_strict_benign": {
+        "false": 13,
+        "true": 109
+      },
+      "common_usage": {
+        "evaluation": 122
+      },
+      "complete_with_approved_exclusions": true,
+      "dataset": "bio_overrefusal",
+      "decision_counts": {
+        "keep": 1489,
+        "repair": 119
+      },
+      "excluded_source_rows": 79,
+      "expected_pairs": 1608,
+      "judgment_pairs": 1608,
+      "output_path": "data/frozen/external-overrefusal-v1/datasets/bio_overrefusal.jsonl",
+      "output_sha256": "2395fe52571a7c4cac84ad2e257c4c5c0c557dd1f5a5ae1f879ceb5f8433330d",
+      "source_path": "data/external/unified/datasets/bio_overrefusal.jsonl",
+      "source_rows": 201,
+      "strict_common_rows": 122,
+      "strict_keep_by_language": {
+        "da": 193,
+        "ja": 194,
+        "ko": 191,
+        "mn": 188,
+        "sv": 180,
+        "sw": 167,
+        "ta": 184,
+        "zh": 192
+      },
+      "strict_keep_pairs": 1489,
+      "translation_pairs": 1608
+    },
+    {
+      "approved_missing_judgments": [],
+      "artifact_path": "artifacts/multilingual-v1/full/xstest",
+      "common_strict_benign": {
+        "true": 151
+      },
+      "common_usage": {
+        "evaluation": 151
+      },
+      "complete_with_approved_exclusions": true,
+      "dataset": "xstest",
+      "decision_counts": {
+        "keep": 1696,
+        "repair": 304
+      },
+      "excluded_source_rows": 99,
+      "expected_pairs": 2000,
+      "judgment_pairs": 2000,
+      "output_path": "data/frozen/external-overrefusal-v1/datasets/xstest.jsonl",
+      "output_sha256": "123cbce674c2a05d417a60c0372ba260d8d3a57655fdce2880f97f880170ec67",
+      "source_path": "data/external/unified/datasets/xstest.jsonl",
+      "source_rows": 250,
+      "strict_common_rows": 151,
+      "strict_keep_by_language": {
+        "da": 217,
+        "ja": 214,
+        "ko": 210,
+        "mn": 212,
+        "sv": 221,
+        "sw": 199,
+        "ta": 205,
+        "zh": 218
+      },
+      "strict_keep_pairs": 1696,
+      "translation_pairs": 2000
+    },
+    {
+      "approved_missing_judgments": [],
+      "artifact_path": "artifacts/multilingual-v1/full/oktest",
+      "common_strict_benign": {
+        "true": 218
+      },
+      "common_usage": {
+        "evaluation": 218
+      },
+      "complete_with_approved_exclusions": true,
+      "dataset": "oktest",
+      "decision_counts": {
+        "keep": 2467,
+        "repair": 253
+      },
+      "excluded_source_rows": 122,
+      "expected_pairs": 2720,
+      "judgment_pairs": 2720,
+      "output_path": "data/frozen/external-overrefusal-v1/datasets/oktest.jsonl",
+      "output_sha256": "715c0d2cf733b97f8a786eea6af950f4ca68c4f44fca381148bf13f826cea4e2",
+      "source_path": "data/external/unified/datasets/oktest.jsonl",
+      "source_rows": 340,
+      "strict_common_rows": 218,
+      "strict_keep_by_language": {
+        "da": 310,
+        "ja": 313,
+        "ko": 318,
+        "mn": 308,
+        "sv": 309,
+        "sw": 282,
+        "ta": 312,
+        "zh": 315
+      },
+      "strict_keep_pairs": 2467,
+      "translation_pairs": 2720
+    },
+    {
+      "approved_missing_judgments": [],
+      "artifact_path": "artifacts/multilingual-v1/full/phtest",
+      "common_strict_benign": {
+        "true": 1067
+      },
+      "common_usage": {
+        "evaluation": 1067
+      },
+      "complete_with_approved_exclusions": true,
+      "dataset": "phtest",
+      "decision_counts": {
+        "exclude": 3,
+        "keep": 14387,
+        "repair": 2186
+      },
+      "excluded_source_rows": 1005,
+      "expected_pairs": 16576,
+      "judgment_pairs": 16576,
+      "output_path": "data/frozen/external-overrefusal-v1/datasets/phtest.jsonl",
+      "output_sha256": "44e457665d2270709f09a869b9cf1030b7eda84806a8ab90a928492dde780071",
+      "source_path": "data/external/unified/datasets/phtest.jsonl",
+      "source_rows": 2072,
+      "strict_common_rows": 1067,
+      "strict_keep_by_language": {
+        "da": 1801,
+        "ja": 1847,
+        "ko": 1861,
+        "mn": 1798,
+        "sv": 1768,
+        "sw": 1642,
+        "ta": 1847,
+        "zh": 1823
+      },
+      "strict_keep_pairs": 14387,
+      "translation_pairs": 16576
+    },
+    {
+      "approved_missing_judgments": [
+        {
+          "language": "sw",
+          "record_id": "falsereject-all:train:row-001878"
+        },
+        {
+          "language": "mn",
+          "record_id": "falsereject-all:train:row-002186"
+        }
+      ],
+      "artifact_path": "artifacts/multilingual-v1/full/falsereject",
+      "common_strict_benign": {
+        "true": 9231
+      },
+      "common_usage": {
+        "evaluation": 706,
+        "training": 8525
+      },
+      "complete_with_approved_exclusions": true,
+      "dataset": "falsereject",
+      "decision_counts": {
+        "exclude": 2,
+        "keep": 116195,
+        "repair": 10289
+      },
+      "excluded_source_rows": 6580,
+      "expected_pairs": 126488,
+      "judgment_pairs": 126486,
+      "output_path": "data/frozen/external-overrefusal-v1/datasets/falsereject.jsonl",
+      "output_sha256": "b6dee46eb336ad31ba6479225efc7bfdb12d14436ab0fa970445c9b3b738253a",
+      "source_path": "data/external/unified/datasets/falsereject.jsonl",
+      "source_rows": 15811,
+      "strict_common_rows": 9231,
+      "strict_keep_by_language": {
+        "da": 14591,
+        "ja": 14695,
+        "ko": 14826,
+        "mn": 14501,
+        "sv": 14539,
+        "sw": 13530,
+        "ta": 14723,
+        "zh": 14790
+      },
+      "strict_keep_pairs": 116195,
+      "translation_pairs": 126488
+    }
+  ],
+  "exclusion_decision": {
+    "decision": "exclude_missing_translation_judgments",
+    "decision_date": "2026-08-04",
+    "excluded_keys": [
+      {
+        "dataset": "falsereject",
+        "error_code": "invalid_prompt",
+        "error_kind": "nonretryable",
+        "error_summary": "HTTP 400 biology safety filter",
+        "error_type": "BadRequestError",
+        "language": "sw",
+        "record_id": "falsereject-all:train:row-001878",
+        "stage": "translation_judge"
+      },
+      {
+        "dataset": "falsereject",
+        "error_code": "invalid_prompt",
+        "error_kind": "nonretryable",
+        "error_summary": "HTTP 400 biology safety filter",
+        "error_type": "BadRequestError",
+        "language": "mn",
+        "record_id": "falsereject-all:train:row-002186",
+        "stage": "translation_judge"
+      }
+    ],
+    "reason": "User approved excluding the two records after three consecutive zero-progress retry rounds against the frozen judge deployment.",
+    "schema_version": "multilingual-translation-exclusions-v1"
+  },
+  "exclusions": "configs/multilingual_translation_exclusions_v1.json",
+  "languages": [
+    "en",
+    "zh",
+    "ja",
+    "ko",
+    "sv",
+    "da",
+    "ta",
+    "mn",
+    "sw"
+  ],
+  "schema_version": "multilingual-final-manifest-v1",
+  "selection_rule": "retain a source record only when all eight target-language judgments have strict_keep=true",
+  "totals": {
+    "approved_missing_judgments": 2,
+    "judgment_pairs": 149390,
+    "source_rows": 18674,
+    "strict_common_rows": 10789,
+    "strict_keep_pairs": 136234,
+    "translation_pairs": 149392
+  }
+}

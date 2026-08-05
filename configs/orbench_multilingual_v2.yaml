@@ -28,8 +28,9 @@ api_retry_count: 2
 call_timeout_seconds: 90
 
 smoke_per_language: 10
-generation_workers: 64
+generation_workers: 208
 smoke_workers: 64
+judge_workers: 64
 models:
   - key: grok-4.3
     deployment: grok-4.3_1
@@ -46,4 +47,39 @@ models:
   - key: gpt-4o
     deployment: gpt-4o_2024-11-20
     workers: 64
+    min_interval_seconds: 0
+  - key: gpt-5.6-sol
+    deployment: gpt-5.6-sol_2026-07-09
+    workers: 16
+    max_workers: 32
+    min_interval_seconds: 0
+  - key: gpt-5.5
+    deployment: gpt-5.5_2026-04-24
+    workers: 16
+    max_workers: 32
+    min_interval_seconds: 0
+  - key: gpt-5
+    deployment: gpt-5_2025-08-07
+    workers: 16
+    max_workers: 32
+    min_interval_seconds: 0
+  - key: gemma-4-31b-it
+    deployment: google/gemma-4-31B-it
+    workers: 16
+    max_workers: 32
+    min_interval_seconds: 0
+  - key: qwen3.5-27b
+    deployment: Qwen/Qwen3.5-27B
+    workers: 2
+    max_workers: 16
+    min_interval_seconds: 0
+  - key: kimi-k2.5
+    deployment: Kimi-K2.5_1
+    workers: 16
+    max_workers: 32
+    min_interval_seconds: 0
+  - key: llama-3.3-70b-instruct
+    deployment: Llama-3.3-70B-Instruct_5
+    workers: 16
+    max_workers: 32
     min_interval_seconds: 0

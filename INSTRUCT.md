@@ -32,6 +32,11 @@ experiments/v2/运行时 manifest、judge、summary 和外部 artifact 记录
 archive/       v0/v1 历史说明和摘要，不作为运行入口
 ```
 
+`data/frozen/` 根目录保存 canonical OR-Bench v2；外部 over-refusal 数据放在
+`data/frozen/external-overrefusal-v1/`，每个数据集一个 JSONL。完整 raw
+translations、judgments 和错误日志仍放在 `artifacts/multilingual-v1/`，不得混入
+frozen 数据。
+
 raw generations、response judgments、checkpoint 和 repair/archive JSONL 不
 进入 Git。它们如需保留，应放在外部 artifact 目录，并写入路径、大小、行数
 和 SHA256 清单。
@@ -117,13 +122,21 @@ python3 scripts/orbench_pipeline.py export-final \
 - `(prompt_id, language)` 唯一；
 - 每条非英文记录都能追溯到英文 source prompt 和翻译 judge。
 
-### 4.4 三模型评估
+### 4.4 多模型评估
 
-多模型入口读取 `data/frozen/final_test_dataset.jsonl`，模型固定为：
+多模型入口读取 `data/frozen/final_test_dataset.jsonl`。canonical 模型面板为：
 
-- Qwen3.5-27B；
-- GPT-4o；
-- Gemma-3-27B-it。
+- `grok-4.3_1`、`DeepSeek-V4-Flash_2026-04-23`、`Kimi-K2.6_2026-04-20`、`gpt-4o_2024-11-20`；
+- `gpt-5.6-sol_2026-07-09`、`gpt-5.5_2026-04-24`、`gpt-5_2025-08-07`；
+- `google/gemma-4-31B-it`、`Qwen/Qwen3.5-27B`、`Kimi-K2.5_1`、`Llama-3.3-70B-Instruct_5`。
+
+新增模型采用按模型独立的 TCP Reno 风格 AIMD：六模型从 16 workers 慢启动，
+最大拥塞窗口为 32；Qwen 根据实测从 2 起步、最大为 16。成功请求在慢启动阶段
+快速增窗，进入拥塞避免后按 `1/cwnd` 加性增长；429、timeout 和连接错误触发
+乘性减半，恢复窗口内抑制重复减半。拥塞状态持久化到各模型目录，重启后继续
+使用已探测窗口。response judge 固定使用
+`gpt-5.5_2026-04-24`；因此该 deployment 作为目标模型时属于 self-judge，
+汇总报告必须明确标注。
 
 先生成 smoke manifest：
 
@@ -151,6 +164,17 @@ python3 scripts/orbench_multimodel.py summarize-full \
 也可以使用 `--models qwen3.5-27b,gpt-4o` 选择模型子集。成功结果按
 `model_key`、`generation_id` 断点续跑，不覆盖已有成功记录。generation error
 不会进入有效生成分母；response judge error 不进入有效 judge 分母。
+
+若目标 deployment 在生成前稳定返回网关 `cyber_policy`，且相同 key 经远端
+100 轮及本地复核仍被拦截，可按实验决定写入独立的
+`policy_blocked_refusals.jsonl`。此类记录作为 refusal 进入分子和分母，但必须
+保留 `policy_blocked=true` 与原始 error code；禁止伪造 response 文本或假装它
+经过 response judge。
+
+GCR 长任务使用 `scripts/orbench_stage_runner.py` 串联补缺、judge 和 summary。
+它只在每模型成功 generation 达到 6,336 后进入 response judge，并反复补齐
+judge error。全部配置模型完成后，运行 `scripts/orbench_panel_report.py` 生成仅含
+refusal rate 的 language、resource group 和 topic × language 结果表。
 
 ## 5. 指标和分母
 
@@ -220,3 +244,18 @@ python3 scripts/orbench_multimodel.py --help
 ```
 
 整理后的仓库必须能够在干净工作区通过以上检查，并且不依赖绝对路径。
+
+## 10. 外部 Over-Refusal 数据统一处理
+
+七套外部数据的统一处理与 OR-Bench v2 主流程相互独立，不产生模型调用：
+
+```bash
+python3 scripts/prepare_external_overrefusal.py
+python3 scripts/audit_external_duplicates.py
+python3 scripts/unify_external_overrefusal.py
+python3 scripts/unify_orbench.py
+```
+
+EVOREFUSE 已排除。统一输出位于 `data/external/unified/`；OR-Bench 也按相同 schema 输出为 `data/external/unified/datasets/orbench.jsonl`。schema、视图、分母和使用规则见 `docs/UNIFIED_EXTERNAL_DATASETS.md`。第三方 raw 文件保持只读，去重只发生在派生 canonical 视图中。
+
+在 GCR A100 上进行八语言翻译和 translation judge 前，必须按 `docs/GCR_MULTILINGUAL_TRANSLATION_PLAN.md` 的 smoke、停止门槛、TRAPI-Reno 自适应并发和断点恢复协议执行；不得用固定高并发直接启动百万级请求。

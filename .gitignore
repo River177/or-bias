@@ -25,9 +25,16 @@ experiments/v2/models/
 experiments/v2/full_manifest.jsonl
 experiments/v2/smoke_manifest.jsonl
 
+# Downloaded third-party benchmark data and audit artifacts
+data/external/
+
 # Historical raw artifacts kept outside Git
 archive/legacy-v0-v1/raw/
 archive/legacy-v0-v1/**/*.jsonl
+
+# Multilingual translation raw and generated data artifacts
+artifacts/multilingual-v1/full/
+artifacts/multilingual-v1/final/datasets/
 
 # Local generated reports
 experiments/v2/summary/*.csv

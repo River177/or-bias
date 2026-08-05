@@ -94,6 +94,8 @@ def load_simple_yaml(path: Path) -> dict[str, Any]:
             current["deployment"] = line.split(":", 1)[1].strip()
         elif current is not None and line.startswith("workers:"):
             current["workers"] = int(line.split(":", 1)[1].strip())
+        elif current is not None and line.startswith("max_workers:"):
+            current["max_workers"] = int(line.split(":", 1)[1].strip())
         elif current is not None and line.startswith("min_interval_seconds:"):
             current["min_interval_seconds"] = float(line.split(":", 1)[1].strip())
     out["models"] = models
@@ -254,6 +256,29 @@ def generation_error_path(model_key: str) -> Path:
     return model_dirs()[model_key] / "generation_errors.jsonl"
 
 
+def concurrency_state_path(model_key: str) -> Path:
+    return model_dirs()[model_key] / "concurrency_state.json"
+
+
+def read_concurrency_state(model_key: str) -> dict[str, Any] | None:
+    path = concurrency_state_path(model_key)
+    if not path.exists():
+        return None
+    try:
+        state = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return state if state.get("algorithm") == "tcp-reno-aimd-v1" else None
+
+
+def write_concurrency_state(model_key: str, state: dict[str, Any]) -> None:
+    path = concurrency_state_path(model_key)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(".json.tmp")
+    temporary.write_text(json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temporary.replace(path)
+
+
 class RateLimiter:
     def __init__(self, interval_seconds: float):
         self.interval_seconds = float(interval_seconds)
@@ -271,23 +296,53 @@ class RateLimiter:
 
 
 class AdaptiveConcurrency:
-    """Per-model concurrency gate with deterministic 8 -> 4 -> 2 -> 1 fallback."""
+    """Thread-safe TCP-Reno-style AIMD gate for in-flight model requests."""
 
-    def __init__(self, initial: int = 8):
-        self._target = initial
+    def __init__(
+        self,
+        initial: int = 8,
+        *,
+        max_concurrency: int | None = None,
+        ssthresh: float | None = None,
+        state: dict[str, Any] | None = None,
+    ):
+        self._min_cwnd = 1.0
+        self._max_cwnd = float(max_concurrency or initial)
+        self._cwnd = min(self._max_cwnd, max(self._min_cwnd, float(initial)))
+        self._ssthresh = min(self._max_cwnd, max(2.0, float(ssthresh or self._max_cwnd)))
         self._active = 0
         self._recent: deque[bool] = deque(maxlen=20)
-        self._retryable_streak = 0
+        self._recovery_remaining = 0
+        self._total_requests = 0
+        self._total_successes = 0
+        self._total_congestion = 0
         self._lock = threading.Condition()
+        if state:
+            self._cwnd = min(self._max_cwnd, max(self._min_cwnd, float(state.get("cwnd", self._cwnd))))
+            self._ssthresh = min(self._max_cwnd, max(2.0, float(state.get("ssthresh", self._ssthresh))))
+            self._recovery_remaining = max(0, int(state.get("recovery_remaining", 0)))
+            self._total_requests = max(0, int(state.get("total_requests", 0)))
+            self._total_successes = max(0, int(state.get("total_successes", 0)))
+            self._total_congestion = max(0, int(state.get("total_congestion", 0)))
 
     @property
     def target(self) -> int:
         with self._lock:
-            return self._target
+            return max(1, int(math.floor(self._cwnd)))
+
+    @property
+    def cwnd(self) -> float:
+        with self._lock:
+            return self._cwnd
+
+    @property
+    def ssthresh(self) -> float:
+        with self._lock:
+            return self._ssthresh
 
     def acquire(self) -> None:
         with self._lock:
-            while self._active >= self._target:
+            while self._active >= max(1, int(math.floor(self._cwnd))):
                 self._lock.wait()
             self._active += 1
 
@@ -296,19 +351,59 @@ class AdaptiveConcurrency:
             self._active -= 1
             self._lock.notify_all()
 
-    def record(self, success: bool, retryable: bool) -> bool:
+    def record(self, success: bool, retryable: bool) -> str:
         with self._lock:
+            self._total_requests += 1
             self._recent.append(not success)
-            self._retryable_streak = self._retryable_streak + 1 if retryable else 0
-            should_reduce = self._retryable_streak >= 3 or (
-                len(self._recent) == 20 and sum(self._recent) / 20 > 0.10
-            )
-            if should_reduce and self._target > 1:
-                self._target = max(1, self._target // 2)
-                self._retryable_streak = 0
-                self._lock.notify_all()
-                return True
-            return False
+            event = "steady"
+            if success:
+                self._total_successes += 1
+                if self._recovery_remaining > 0:
+                    self._recovery_remaining -= 1
+                    event = "recovery_ack"
+                elif self._cwnd < self._ssthresh:
+                    # Slow start: +1 per successful ACK, approximately doubling
+                    # the window once per completed window.
+                    self._cwnd = min(self._max_cwnd, self._cwnd + 1.0)
+                    event = "slow_start"
+                elif self._cwnd < self._max_cwnd:
+                    # Congestion avoidance: +1/cwnd per successful ACK, or
+                    # approximately one extra request per completed window.
+                    self._cwnd = min(self._max_cwnd, self._cwnd + 1.0 / self._cwnd)
+                    event = "additive_increase"
+            elif retryable:
+                self._total_congestion += 1
+                if self._recovery_remaining == 0:
+                    self._ssthresh = max(2.0, self._cwnd / 2.0)
+                    self._cwnd = max(self._min_cwnd, self._ssthresh)
+                    # Multiple requests from one old window can fail together;
+                    # suppress repeated halving until one reduced window clears.
+                    self._recovery_remaining = max(1, int(math.ceil(self._cwnd)))
+                    event = "multiplicative_decrease"
+                else:
+                    event = "congestion_during_recovery"
+            else:
+                event = "non_congestion_error"
+            self._lock.notify_all()
+            return event
+
+    def to_dict(self) -> dict[str, Any]:
+        with self._lock:
+            return {
+                "algorithm": "tcp-reno-aimd-v1",
+                "cwnd": self._cwnd,
+                "ssthresh": self._ssthresh,
+                "min_cwnd": self._min_cwnd,
+                "max_cwnd": self._max_cwnd,
+                "target": max(1, int(math.floor(self._cwnd))),
+                "active": self._active,
+                "recovery_remaining": self._recovery_remaining,
+                "recent_error_rate": sum(self._recent) / len(self._recent) if self._recent else 0.0,
+                "total_requests": self._total_requests,
+                "total_successes": self._total_successes,
+                "total_congestion": self._total_congestion,
+                "updated_at_unix": time.time(),
+            }
 
 
 def is_retryable_error(error: str) -> bool:
@@ -341,7 +436,15 @@ def run_generations(cfg: dict[str, Any], pass_name: str) -> None:
             existing.add((model_key, row.get("prompt_id"), row.get("language"), int(row.get("sample_idx", 0))))
     tasks = [task for task in tasks if (task["model_key"], task["row"]["prompt_id"], task["row"]["language"], task["sample_idx"]) not in existing]
 
-    model_limits = {model["key"]: AdaptiveConcurrency(int(model.get("workers", 8))) for model in cfg["models"]}
+    model_limits = {
+        model["key"]: AdaptiveConcurrency(
+            int(model.get("workers", 8)),
+            max_concurrency=int(model.get("max_workers", model.get("workers", 8))),
+            ssthresh=float(model.get("max_workers", model.get("workers", 8))),
+            state=read_concurrency_state(model["key"]),
+        )
+        for model in cfg["models"]
+    }
     model_rate_limiters = {model["key"]: RateLimiter(float(model.get("min_interval_seconds", 0))) for model in cfg["models"]}
     write_locks = {model["key"]: threading.Lock() for model in cfg["models"]}
 
@@ -369,19 +472,37 @@ def run_generations(cfg: dict[str, Any], pass_name: str) -> None:
             result = future.result()
             model_key = result["model_key"]
             retryable = bool(result.pop("_retryable", False))
-            reduced = model_limits[model_key].record(not result["generation_error"], retryable)
+            congestion_event = model_limits[model_key].record(not result["generation_error"], retryable)
             if result["generation_error"]:
                 with write_locks[model_key]:
                     append_jsonl(generation_error_path(model_key), result)
             else:
                 with write_locks[model_key]:
                     append_jsonl(generation_path(model_key), result)
-            print(json.dumps({"generated": result["generation_id"], "error": result["generation_error"], "model": model_key, "workers": model_limits[model_key].target, "concurrency_reduced": reduced}, ensure_ascii=False), flush=True)
-    print(json.dumps({"pass": pass_name, "submitted": len(tasks), "total_expected": len(rows) * len(cfg["models"]), "workers": {key: gate.target for key, gate in model_limits.items()}}, ensure_ascii=False))
+            state = model_limits[model_key].to_dict()
+            if congestion_event != "steady" or state["total_requests"] % 10 == 0:
+                write_concurrency_state(model_key, state)
+            print(json.dumps({"generated": result["generation_id"], "error": result["generation_error"], "model": model_key, "workers": state["target"], "cwnd": round(state["cwnd"], 3), "ssthresh": round(state["ssthresh"], 3), "congestion_event": congestion_event}, ensure_ascii=False), flush=True)
+    for model_key, gate in model_limits.items():
+        write_concurrency_state(model_key, gate.to_dict())
+    print(json.dumps({"pass": pass_name, "submitted": len(tasks), "total_expected": len(rows) * len(cfg["models"]), "congestion": {key: gate.to_dict() for key, gate in model_limits.items()}}, ensure_ascii=False))
 
 
 def judgment_path(model_key: str) -> Path:
     return model_dirs()[model_key] / "response_judgments.jsonl"
+
+
+def policy_refusal_path(model_key: str) -> Path:
+    return model_dirs()[model_key] / "policy_blocked_refusals.jsonl"
+
+
+def policy_refusals(model_key: str, pass_name: str) -> list[dict[str, Any]]:
+    """Return audited gateway blocks that the experiment counts as refusals."""
+    return [
+        row
+        for row in read_jsonl(policy_refusal_path(model_key))
+        if row.get("pass") == pass_name and row.get("policy_blocked") and row.get("refusal")
+    ]
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
@@ -399,6 +520,24 @@ def summarize(cfg: dict[str, Any], pass_name: str) -> None:
         model_key = model["key"]
         generations = [row for row in read_jsonl(generation_path(model_key)) if row.get("pass") == pass_name]
         judgments = {row.get("generation_id"): row for row in read_jsonl(judgment_path(model_key)) if row.get("generation_id")}
+        generation_ids = {row.get("generation_id") for row in generations}
+        for refusal in policy_refusals(model_key, pass_name):
+            if refusal["generation_id"] in generation_ids:
+                continue
+            # Policy blocks are virtual evaluation records only. No response
+            # text or successful model generation is fabricated on disk.
+            generations.append({
+                "model_key": model_key,
+                "generation_id": refusal["generation_id"],
+                "prompt_id": refusal["prompt_id"],
+                "language": refusal["language"],
+                "category": refusal["category"],
+                "sample_idx": int(refusal.get("sample_idx", 0)),
+                "pass": pass_name,
+                "policy_blocked": True,
+                "generation_error": False,
+            })
+            judgments[refusal["generation_id"]] = refusal
         groups: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
         for generation in generations:
             groups[(generation["language"], generation["category"])].append(generation)
@@ -464,7 +603,7 @@ def run_response_judgments(cfg: dict[str, Any], pass_name: str) -> None:
             parsed = {"judge_error": True, "error": f"{type(first_exc).__name__}: {first_exc}"}
         return {"model_key": model_key, "generation_id": generation["generation_id"], "prompt_id": generation["prompt_id"], "language": generation["language"], "category": generation["category"], **parsed, "judge_deployment": cfg["response_judge_deployment"], "raw": raw, "trapi": metadata}
 
-    with ThreadPoolExecutor(max_workers=int(cfg["smoke_workers"])) as pool:
+    with ThreadPoolExecutor(max_workers=int(cfg.get("judge_workers", cfg["smoke_workers"]))) as pool:
         futures = [pool.submit(worker, task) for task in tasks]
         for future in as_completed(futures):
             result = future.result()
@@ -480,17 +619,40 @@ def main() -> None:
     parser.add_argument("command", choices=["prepare", "generate-smoke", "judge-smoke", "generate-full", "judge-full", "summarize-smoke", "summarize-full", "run-full"])
     parser.add_argument("--config", type=Path, default=CONFIG)
     parser.add_argument("--models", default=None, help="Comma-separated model keys to run")
+    parser.add_argument("--workers", type=int, default=None, help="Override per-model workers for the selected models")
+    parser.add_argument("--max-workers", type=int, default=None, help="Override the maximum Reno congestion window")
+    parser.add_argument("--call-timeout-seconds", type=int, default=None, help="Override the request timeout for this run")
     args = parser.parse_args()
     CONFIG = args.config.resolve()
     cfg = load_simple_yaml(CONFIG)
     experiment_dir = Path(str(cfg.get("experiment_dir", "experiments/v2")))
     EXP = experiment_dir if experiment_dir.is_absolute() else ROOT / experiment_dir
-    MODEL_DIRS = {model["key"]: EXP / "models" / model["key"] for model in cfg["models"]}
     if args.models:
         selected = {key.strip() for key in args.models.split(",") if key.strip()}
         cfg["models"] = [model for model in cfg["models"] if model["key"] in selected]
         if not cfg["models"]:
             raise SystemExit(f"No configured models matched --models={args.models}")
+        matched = {model["key"] for model in cfg["models"]}
+        missing = selected - matched
+        if missing:
+            raise SystemExit(f"Unknown configured model keys: {','.join(sorted(missing))}")
+    if args.workers is not None:
+        if args.workers < 1:
+            raise SystemExit("--workers must be at least 1")
+        for model in cfg["models"]:
+            model["workers"] = args.workers
+    if args.max_workers is not None:
+        if args.max_workers < 1:
+            raise SystemExit("--max-workers must be at least 1")
+        for model in cfg["models"]:
+            model["max_workers"] = args.max_workers
+    if args.call_timeout_seconds is not None:
+        if args.call_timeout_seconds < 1:
+            raise SystemExit("--call-timeout-seconds must be at least 1")
+        cfg["call_timeout_seconds"] = args.call_timeout_seconds
+    # Initialize directories only for the selected model set. This makes a
+    # subset run incapable of rewriting another model's successful artifacts.
+    MODEL_DIRS = {model["key"]: EXP / "models" / model["key"] for model in cfg["models"]}
     if args.command == "prepare":
         rows = load_test_rows(cfg)
         write_manifests(rows, cfg)
