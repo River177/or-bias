@@ -1,2 +1,4 @@
 openai>=1.0
 azure-identity>=1.15
+requests>=2.31
+PyYAML>=6.0

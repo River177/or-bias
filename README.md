@@ -1,15 +1,23 @@
-# OR-Bench multilingual over-refusal
+# OR-Bias
 
-This repository contains the reproducible multilingual OR-Bench harmless-side
-pipeline. The canonical experiment is the nine-language v2 panel:
+OR-Bias 是一个可复现的多语言 over-refusal 数据与评测仓库。canonical OR-Bench v2 面板固定为：
 
 `en, zh, ja, ko, sv, da, ta, mn, sw`
 
-Read [INSTRUCT.md](INSTRUCT.md) before running any stage. It defines the data
-contract, model-call boundaries, resume rules, quality gates, and Git freeze
-procedure.
+安装并查看统一入口：
 
-The default configuration is
-`configs/orbench_multilingual_v2.yaml`. Preparation and model-call stages are
-separate commands; no model call is made by importing the scripts or running
-the unit tests.
+```bash
+python3 -m pip install -e .
+orbias --help
+```
+
+完整生命周期、模型调用边界、断点恢复、artifact 与 Release 规则见 [INSTRUCT.md](INSTRUCT.md)。
+
+进一步资料：
+
+- [数据集说明](docs/datasets/overrefusal-datasets.md)
+- [统一数据 schema](docs/datasets/unified-external-datasets.md)
+- [多语言翻译实验记录](docs/experiments/multilingual-translation-experiment.md)
+- [GCR 运行与恢复](docs/operations/gcr-multilingual-translation.md)
+
+导入模块、运行测试和 `--help` 都不会产生模型调用。

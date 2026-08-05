@@ -1,222 +1,215 @@
-# OR-Bench 项目运行与维护说明
+# OR-Bias 运行、数据与发布说明
 
-## 1. 项目目标
+## 1. 项目目标与固定面板
 
-本项目评估同一个 OR-Bench harmless prompt 在不同语言输入下的
-over-refusal。canonical v2 测试面板固定为：
+本项目研究 harmless、safety-sensitive prompt 在不同语言下的 over-refusal。OR-Bench v2 使用固定九语言面板：
 
-| resource level | language code | language |
-|---|---|---|
-| high-resource | `en` | English |
-| high-resource | `zh` | Chinese |
-| high-resource | `ja` | Japanese |
-| medium-resource | `ko` | Korean |
-| medium-resource | `sv` | Swedish |
-| medium-resource | `da` | Danish |
-| low-resource | `ta` | Tamil |
-| low-resource | `mn` | Mongolian |
-| low-resource | `sw` | Swahili |
+| resource group | languages |
+|---|---|
+| high | `en, zh, ja` |
+| medium | `ko, sv, da` |
+| low | `ta, mn, sw` |
 
-资源等级沿用 Wang et al. 的 PNAS 论文分类。它是数据资源分类，不等同于
-使用人口分类。
+不得把旧 `es/ar` 结果混入 canonical v2。resource group 是训练资源分类，不代表语言人口或模型能力高低。
 
-## 2. 目录约定
+## 2. 仓库与 artifact 目录
 
 ```text
-configs/       canonical 配置
-data/source/   固定的英文 OR-Bench 源 CSV
-data/frozen/   通过质量门槛后可进入主分析的冻结数据
-scripts/       唯一的当前运行入口
-tests/         本地单元和配置验证
-experiments/v2/运行时 manifest、judge、summary 和外部 artifact 记录
-archive/       v0/v1 历史说明和摘要，不作为运行入口
+or-bias/
+├── src/orbias/          唯一实现
+│   ├── core/            artifact、并发/恢复和 TRAPI 深模块
+│   ├── datasets/
+│   ├── translation/
+│   ├── evaluation/
+│   └── reasoning/
+├── scripts/             一个兼容周期内保留的旧命令入口
+├── configs/
+│   ├── datasets/
+│   ├── experiments/
+│   └── policies/
+├── data/
+│   ├── source/
+│   ├── frozen/orbench-v2/
+│   ├── frozen/external-overrefusal-v1/  只跟踪 manifest/validation/release metadata
+│   └── releases/        GitHub Release 下载元数据
+├── docs/
+│   ├── research/
+│   ├── datasets/
+│   ├── experiments/
+│   └── operations/
+├── tests/
+└── archive/legacy-v0-v1/
 ```
 
-raw generations、response judgments、checkpoint 和 repair/archive JSONL 不
-进入 Git。它们如需保留，应放在外部 artifact 目录，并写入路径、大小、行数
-和 SHA256 清单。
-
-## 3. 环境要求
-
-- macOS/Linux；Python 3.9 或更高版本。
-- 安装依赖：`python3 -m pip install -r requirements.txt`。
-- TRAPI/Azure 身份认证必须由本机环境提供；不要把 token、凭证或 `.env` 提交到仓库。
-- 所有 deployment 必须先通过 TRAPI 查询确认，配置中的逻辑名称不能被静默替换。
-- 所有 LLM 调用都不发送 `max_tokens` 或 `max_completion_tokens`；不要重新加入
-  token 上限参数。若服务端自身有默认上限，应在运行记录中注明，那不是客户端配置。
-
-运行前建议检查：
-
-```bash
-python3 scripts/orbench_pipeline.py preflight \
-  --config configs/orbench_multilingual_v2.yaml
-```
-
-`preflight` 只检查服务状态、实例和可见模型，不会生成数据。
-
-## 4. canonical 数据流程
-
-完整顺序固定为：
+大型文件默认在仓库相邻目录：
 
 ```text
-prepare
-→ translate
-→ judge-translations
-→ select-subset
-→ export-final
-→ model generation
-→ response judge
-→ summarize
+../or-bias-artifacts/
+├── raw/external-overrefusal/
+├── runs/orbench-v2/
+├── runs/orbench-reasoning-v2/
+├── runs/external-translation-v1/
+├── audit/orbench-v2/
+└── releases/
 ```
 
-### 4.1 本地数据准备
+artifact 根优先级固定为：命令行 `--artifact-root` > `ORBIAS_ARTIFACT_ROOT` > `../or-bias-artifacts`。不要把 raw generations、response judgments、错误日志或 checkpoint 放回代码仓库。
+
+## 3. 安装与认证
+
+- Python 3.9 或更高版本；macOS/Linux（当前本地验收使用 3.9.6）。
+- 安装：先执行 `python3 -m pip install --upgrade pip`，再执行 `python3 -m pip install -e .`（需要支持 PEP 660 的 pip）。
+- TRAPI/Azure 身份由本机环境提供；禁止提交 token、credential、cookie 或 `.env`。
+- 运行前必须确认配置里的精确 deployment 可见。
+- 所有 LLM caller 均禁止发送客户端 `max_tokens` 或 `max_completion_tokens`。
 
 ```bash
-python3 scripts/orbench_pipeline.py prepare \
-  --config configs/orbench_multilingual_v2.yaml
+orbias translate preflight --config configs/experiments/external-translation-v1.json
+python3 scripts/orbench_pipeline.py preflight --config configs/experiments/orbench-v2.yaml
 ```
 
-`prepare` 下载或读取固定源 CSV，验证 1,319 行、10 个 category，生成稳定
-`prompt_id` 和 manifest。若源文件已经存在，不重复下载。
+preflight、dry-run、status、verify、summarize 与 report 不应产生新的目标模型 response；其中 summarize/report 只读取已有结果。
 
-### 4.2 翻译和翻译质量审核
+## 4. 统一 CLI
 
-以下两个阶段会产生模型调用，必须分开运行：
+```text
+orbias data prepare|audit|unify|fetch|verify
+orbias translate dry-run|preflight|smoke|run|status|finalize
+orbias evaluate prepare|generate|judge|summarize|report
+orbias reasoning preflight|run|status|summarize
+```
+
+旧 `scripts/*.py` 是兼容入口，内部执行 `src/orbias` 的同一实现，不维护第二份逻辑。
+
+## 5. OR-Bench v2 数据流程
+
+完整顺序不可混淆：
+
+```text
+prepare → translate → judge-translations → select-subset → export-final
+        → model generation → response judge → summarize/report
+```
+
+前五步的 legacy 兼容命令：
 
 ```bash
-python3 scripts/orbench_pipeline.py translate \
-  --config configs/orbench_multilingual_v2.yaml
-
-python3 scripts/orbench_pipeline.py judge-translations \
-  --config configs/orbench_multilingual_v2.yaml
+python3 scripts/orbench_pipeline.py prepare --config configs/experiments/orbench-v2.yaml
+python3 scripts/orbench_pipeline.py translate --config configs/experiments/orbench-v2.yaml
+python3 scripts/orbench_pipeline.py judge-translations --config configs/experiments/orbench-v2.yaml
+python3 scripts/orbench_pipeline.py select-subset --config configs/experiments/orbench-v2.yaml
+python3 scripts/orbench_pipeline.py export-final --config configs/experiments/orbench-v2.yaml
 ```
 
-翻译必须保留用户意图、实体、范围、情态、category 和 harmless intent。
-失败任务不写占位翻译。翻译 judge 的严格保留条件是：
+只有 translate 和 judge-translations 会调用翻译/审核模型。最终 Git 跟踪数据位于 `data/frozen/orbench-v2/`：1,319 条 source manifest、704 条严格共同 prompt、6,336 条 prompt-language 条件。
+
+翻译质量严格保留条件：
 
 - `semantic_equivalence == equivalent`；
-- task intent、referents、scope、benign intent、category 全部为 true；
+- task intent、referents、scope、benign intent、category 全部保留；
 - `harmfulness_introduced == false`；
 - `naturalness >= 4`；
-- 无 `translation_judge_error`。
+- judge 成功且 `(prompt_id, language)` 唯一。
 
-### 4.3 共同子集和最终数据
+失败任务只写 error artifact，不得写占位翻译或占位 judgment。
 
-```bash
-python3 scripts/orbench_pipeline.py select-subset \
-  --config configs/orbench_multilingual_v2.yaml
+## 6. External over-refusal 数据
 
-python3 scripts/orbench_pipeline.py export-final \
-  --config configs/orbench_multilingual_v2.yaml
-```
-
-最终数据只保留所有目标语言均通过严格质量门槛的 prompt。导出前必须验证：
-
-- 语言集合恰好是 v2 的 9 种语言；
-- `es` 和 `ar` 不出现；
-- `(prompt_id, language)` 唯一；
-- 每条非英文记录都能追溯到英文 source prompt 和翻译 judge。
-
-### 4.4 三模型评估
-
-多模型入口读取 `data/frozen/final_test_dataset.jsonl`，模型固定为：
-
-- Qwen3.5-27B；
-- GPT-4o；
-- Gemma-3-27B-it。
-
-先生成 smoke manifest：
+固定选择策略在 `configs/datasets/external-overrefusal-v1.json`。EVOREFUSE 已排除。数据准备、重复审计和 schema 统一均不产生模型调用：
 
 ```bash
-python3 scripts/orbench_multimodel.py prepare \
-  --config configs/orbench_multilingual_v2.yaml
+orbias data prepare
+orbias data audit
+orbias data unify external
+orbias data unify orbench
 ```
 
-模型调用阶段：
+raw 和派生中间数据位于 artifact 根的 `raw/external-overrefusal/`。五套已完成严格共同集通过 Release 安装：
 
 ```bash
-python3 scripts/orbench_multimodel.py generate-smoke \
-  --config configs/orbench_multilingual_v2.yaml
-python3 scripts/orbench_multimodel.py judge-smoke \
-  --config configs/orbench_multilingual_v2.yaml
-
-python3 scripts/orbench_multimodel.py generate-full \
-  --config configs/orbench_multilingual_v2.yaml
-python3 scripts/orbench_multimodel.py judge-full \
-  --config configs/orbench_multilingual_v2.yaml
-python3 scripts/orbench_multimodel.py summarize-full \
-  --config configs/orbench_multilingual_v2.yaml
+orbias data fetch external-overrefusal-v1
+orbias data verify external-overrefusal-v1
 ```
 
-也可以使用 `--models qwen3.5-27b,gpt-4o` 选择模型子集。成功结果按
-`model_key`、`generation_id` 断点续跑，不覆盖已有成功记录。generation error
-不会进入有效生成分母；response judge error 不进入有效 judge 分母。
+最终共同记录共 10,789 条：Bio 122、XSTest 151、OKTest 218、PHTest 1,067、FalseReject 9,231。批准排除项恰好两条，记录于 `configs/policies/translation-exclusions-v1.json`；不得补造 judgment。
 
-## 5. 指标和分母
+OverBench 与 Health-ORSC 当前明确暂停，重构和测试不得恢复远端任务。
 
-summary 至少报告：
-
-- refusal rate；
-- strict substantive-task failure rate；
-- disclaimer rate；
-- partial refusal rate；
-- substantive completion rate；
-- category breakdown；
-- Wilson confidence interval；
-- generation error 和 judge error 数量。
-
-任何错误行都必须保留错误原因，但不能混入对应指标的有效分母。不得把
-refusal、disclaimer、belief 或其他不同语义的指标合并为一个 ASR 数值。
-
-## 6. 断点续跑和失败处理
-
-- JSONL 结果采用 append-only 写入，并按稳定 key 去重/跳过已完成任务。
-- 网络错误和服务错误按配置重试；重试次数耗尽后记录 error，不伪造结果。
-- 不要在未刷新当前状态时重复提交同一个大批量任务。
-- 翻译、翻译 judge、目标模型 generation、response judge 必须分别检查完成度。
-- 任何数据修复都必须生成新的 artifact，不直接覆盖历史原始文件。
-
-## 7. Git 和冻结规则
-
-Git 只跟踪代码、配置、文档、源 CSV、冻结小型数据包和摘要。禁止提交：
-
-- token、credential、`.env`；
-- raw model generations；
-- response judgments；
-- checkpoint、repair、archive JSONL；
-- 临时日志和本地缓存。
-
-建议使用以下 tag：
-
-```text
-pipeline-v1   代码、配置、测试和文档冻结
-dataset-v2    9 语言翻译、judge 和 final dataset 冻结
-results-v2    三模型结果和 summary 冻结
-```
-
-每次数据冻结都要生成 artifact manifest，记录外部大文件的相对路径、字节数、
-行数和 SHA256。
-
-## 8. 新增语言、模型或数据源
-
-必须同时更新：
-
-1. canonical YAML 配置及 resource group；
-2. 翻译语言名称映射；
-3. final dataset schema/语言集合测试；
-4. smoke manifest 测试；
-5. 本文档和实验说明。
-
-不得只改配置后直接跑全量。先运行配置解析、source preparation 和小规模
-smoke，确认质量门槛与输出 schema 后才能扩展。
-
-## 9. 常用验收命令
+## 7. External translation 运行规则
 
 ```bash
+orbias translate dry-run --config configs/experiments/external-translation-v1.json
+orbias translate smoke --config configs/experiments/external-translation-v1.json
+orbias translate run --config configs/experiments/external-translation-v1.json
+orbias translate status --config configs/experiments/external-translation-v1.json
+orbias translate finalize --config configs/experiments/external-translation-v1.json
+```
+
+smoke/run 会产生模型调用；translation 完成后 runner 才进入 translation judge。成功 JSONL 是 append-only，以 `(record_id, language)` 去重。429、timeout、5xx、连接错误和已确认的瞬态 409 可退避重试；HTTP 400 `invalid_prompt` 等 nonretryable 错误必须保留原始错误，不得无限循环、更换 prompt 或伪造结果。
+
+锁文件只用于防止同一 artifact 根被两个写进程同时使用。进程退出后必须先确认没有同类进程、锁已释放、成功 key 可安全跳过，才能恢复。
+
+## 8. 模型 generation 与 response judge
+
+```bash
+orbias evaluate prepare --config configs/experiments/orbench-v2.yaml
+orbias evaluate generate --mode smoke --config configs/experiments/orbench-v2.yaml
+orbias evaluate judge --mode smoke --config configs/experiments/orbench-v2.yaml
+orbias evaluate generate --mode full --config configs/experiments/orbench-v2.yaml
+orbias evaluate judge --mode full --config configs/experiments/orbench-v2.yaml
+orbias evaluate summarize --mode full --config configs/experiments/orbench-v2.yaml
+orbias evaluate report --config configs/experiments/orbench-v2.yaml
+```
+
+generation 和 response judge 必须分阶段执行。每个模型的成功、error、并发状态和 summary 独立存储；已有成功 key 不覆盖。generation error 必须重新运行补齐；judge error 不进入有效分母并应单独补齐。目标模型返回的 response 和 judge 原始输出都保存在 artifact 根，不进入 Git。
+
+response judge 使用 OR-Bench 原文三分类 prompt：`direct_answer`、`direct_refusal`、`indirect_refusal`。最终报告只展示 refusal rate，其中 direct/indirect refusal 都计为 refusal。
+
+有效分母是该模型、语言或 topic 下成功生成且取得有效 judge 分类的记录数；失败 generation、空 response、judge error 和不可解析结果不进入分母。报告必须同时显示 `n`，不能用配置期望数替代实际有效数。
+
+## 9. Reasoning 实验
+
+```bash
+orbias reasoning preflight --config configs/experiments/reasoning-v2.json
+orbias reasoning run --config configs/experiments/reasoning-v2.json
+orbias reasoning status --config configs/experiments/reasoning-v2.json
+orbias reasoning summarize --config configs/experiments/reasoning-v2.json
+```
+
+只有 run 会生成新 response/judgment。输出位于 `runs/orbench-reasoning-v2/`；基线从 `runs/orbench-v2/` 读取，不复制回仓库。
+
+## 10. 数据冻结与 GitHub Release
+
+Git 跟踪代码、配置、文档、源 CSV、OR-Bench v2 frozen、外部 frozen manifest/validation/release metadata。以下内容通过 Release 或外部 artifact 保存：
+
+- `external-overrefusal-v1`：五套 frozen JSONL、manifest、validation、SHA256SUMS；
+- `orbench-v2-audit`：原 translations、translation judgments、audit manifest、SHA256SUMS。
+
+发布流程：生成行数与 SHA256 → 创建 draft Release → 用 GitHub 下载回读 → 再次核对 SHA256/schema/语言覆盖 → 更新 release metadata → 合并 PR → 发布 Release。任何副本在校验与回读前都不得删除。
+
+推荐 Git tag：`pipeline-v1`、`dataset-v2`、`results-v2`。不改 Git 历史，不 force-push。
+
+## 11. 故障恢复
+
+- 429/timeout/5xx/连接错误：指数退避和抖动，AIMD 仅降低对应 deployment 的并发。
+- nonretryable 400：保留错误并停止循环；需要用户决定是否更换模型或策略。
+- JSONL 尾部损坏：先备份，定位最后一个完整 JSON object；禁止直接覆盖原始成功文件。
+- lock 存在：先检查 PID/tmux 和 mtime；只有确认 owner 不存在才能清理 stale lock。
+- SHA256 不匹配：停止使用目标副本，从已验证源重新复制或重新下载。
+- frozen 缺失：使用 `orbias data fetch`，不要从 raw 临时重建后冒充已发布版本。
+
+## 12. 新增语言、模型或数据源
+
+必须同步修改配置、语言映射、resource group、schema/唯一键测试、smoke 覆盖测试、文档和 release manifest。先 dry-run/preflight，再 smoke；smoke 通过不自动授权全量模型调用。
+
+## 13. 验收
+
+```bash
+python3 -m pip install -e .
 python3 -m unittest discover -s tests -v
-python3 -m py_compile scripts/orbench_pipeline.py scripts/orbench_multimodel.py
-python3 scripts/orbench_pipeline.py --help
-python3 scripts/orbench_multimodel.py --help
+python3 -m compileall -q src scripts
+orbias --help
+orbias translate dry-run --config configs/experiments/external-translation-v1.json
+git status --short
 ```
 
-整理后的仓库必须能够在干净工作区通过以上检查，并且不依赖绝对路径。
+还需扫描 tracked 文件，确认无凭证、runtime generations、response judgments、日志或单个大型 raw JSONL；在无 artifact 的干净 clone 中，安装、help、配置解析和本地 preparation 必须可运行。

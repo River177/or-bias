@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "description": "Fixed source-preserving selection policy for external over-refusal datasets.",
+  "datasets": [
+    {
+      "key": "xstest-safe",
+      "format": "csv",
+      "files": [{"path": "xstest/xstest_prompts.csv", "split": "test"}],
+      "prompt_field": "prompt",
+      "id_field": "id",
+      "filters": {"label": "safe"},
+      "source_label_field": "label",
+      "category_field": "type",
+      "metadata_fields": ["focus", "note"],
+      "expected_selected_rows": 250
+    },
+    {
+      "key": "phtest-harmless",
+      "format": "csv",
+      "files": [{"path": "phtest/PHTest.csv", "split": "test"}],
+      "prompt_field": "Request",
+      "id_field": "ID",
+      "filters": {"Harmfulness": "harmless"},
+      "source_label_field": "Harmfulness",
+      "metadata_fields": [],
+      "expected_selected_rows": 2077
+    },
+    {
+      "key": "falsereject-all",
+      "format": "jsonl",
+      "files": [
+        {"path": "falsereject/train.jsonl", "split": "train"},
+        {"path": "falsereject/test.jsonl", "split": "test"}
+      ],
+      "prompt_field": "prompt",
+      "filters": {},
+      "source_label_constant": "benign",
+      "category_field": "category_text",
+      "metadata_fields": ["category"],
+      "expected_selected_rows": 15811
+    },
+    {
+      "key": "overbench-hard",
+      "format": "jsonl",
+      "files": [{"path": "overbench/overbench_hard.jsonl", "split": "hard"}],
+      "prompt_field": "prompt",
+      "filters": {},
+      "source_label_constant": "benign",
+      "metadata_fields": [],
+      "expected_selected_rows": 30000
+    },
+    {
+      "key": "oktest-all",
+      "format": "csv",
+      "files": [
+        {"path": "oktest/OKTest.csv", "split": "main"},
+        {"path": "oktest/OKTest_heldout.csv", "split": "heldout"}
+      ],
+      "prompt_field": "prompt",
+      "filters": {},
+      "source_label_constant": "benign",
+      "metadata_fields": [],
+      "expected_selected_rows": 350
+    },
+    {
+      "key": "health-orsc-benign-all",
+      "format": "jsonl",
+      "files": [{"path": "health-orsc-bench/health-orsc-bench.jsonl", "split": "full"}],
+      "prompt_field": "question",
+      "id_field": "id",
+      "filters": {},
+      "source_label_constant": "benign",
+      "category_field": "classification",
+      "metadata_fields": ["original_id", "score"],
+      "expected_selected_rows": 31920
+    },
+    {
+      "key": "bio-overrefusal-all",
+      "format": "jsonl",
+      "files": [{"path": "bio-over-refusal/queries.jsonl", "split": "full"}],
+      "prompt_field": "query",
+      "id_field": "query_id",
+      "filters": {},
+      "source_label_field": "legitimacy",
+      "category_field": "subdomain_primary",
+      "metadata_fields": ["tier", "subdomain_secondary", "style_tags", "schema_version"],
+      "ambiguous_labels": ["ambiguous"],
+      "expected_selected_rows": 201
+    }
+  ]
+}

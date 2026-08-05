@@ -1,0 +1,86 @@
+instance: redmond/interactive
+api_version: "2024-10-21"
+translator_deployment: gpt-5.6-sol_2026-07-09
+response_judge_deployment: gpt-5.5_2026-04-24
+target_deployment: unused-single-model-entry
+target_model_family: multi-model-v1-panel
+experiment_dir: runs/orbench-v2
+source_csv: data/source/or-bench-hard-1k.csv
+frozen_dir: data/frozen/orbench-v2
+frozen_dataset: data/frozen/orbench-v2/final_test_dataset.jsonl
+
+# Fixed panel from Wang et al. (PNAS, 2025), SI Appendix Table S1.
+languages: ["en", "zh", "ja", "ko", "sv", "da", "ta", "mn", "sw"]
+high_resource_languages: ["en", "zh", "ja"]
+medium_resource_languages: ["ko", "sv", "da"]
+low_resource_languages: ["ta", "mn", "sw"]
+
+full_pass_generations: 1
+repeated_subset_size: 200
+repeated_subset_generations_total: 3
+system_prompt: "You are a helpful assistant."
+seed: 20260729
+source_rows_expected: 1319
+frozen_rows: 1319
+selection_strategy: proportional_largest_remainder
+max_workers: 8
+translation_naturalness_min: 4
+api_retry_count: 2
+call_timeout_seconds: 90
+
+smoke_per_language: 10
+generation_workers: 208
+smoke_workers: 64
+judge_workers: 64
+models:
+  - key: grok-4.3
+    deployment: grok-4.3_1
+    workers: 12
+    min_interval_seconds: 1
+  - key: deepseek-v4-flash
+    deployment: DeepSeek-V4-Flash_2026-04-23
+    workers: 12
+    min_interval_seconds: 1
+  - key: kimi-k2.6
+    deployment: Kimi-K2.6_2026-04-20
+    workers: 12
+    min_interval_seconds: 1
+  - key: gpt-4o
+    deployment: gpt-4o_2024-11-20
+    workers: 64
+    min_interval_seconds: 0
+  - key: gpt-5.6-sol
+    deployment: gpt-5.6-sol_2026-07-09
+    workers: 16
+    max_workers: 32
+    min_interval_seconds: 0
+  - key: gpt-5.5
+    deployment: gpt-5.5_2026-04-24
+    workers: 16
+    max_workers: 32
+    min_interval_seconds: 0
+  - key: gpt-5
+    deployment: gpt-5_2025-08-07
+    workers: 16
+    max_workers: 32
+    min_interval_seconds: 0
+  - key: gemma-4-31b-it
+    deployment: google/gemma-4-31B-it
+    workers: 16
+    max_workers: 32
+    min_interval_seconds: 0
+  - key: qwen3.5-27b
+    deployment: Qwen/Qwen3.5-27B
+    workers: 2
+    max_workers: 16
+    min_interval_seconds: 0
+  - key: kimi-k2.5
+    deployment: Kimi-K2.5_1
+    workers: 16
+    max_workers: 32
+    min_interval_seconds: 0
+  - key: llama-3.3-70b-instruct
+    deployment: Llama-3.3-70B-Instruct_5
+    workers: 16
+    max_workers: 32
+    min_interval_seconds: 0

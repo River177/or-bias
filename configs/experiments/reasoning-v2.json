@@ -1,0 +1,105 @@
+{
+  "instance": "redmond/interactive",
+  "api_version": "2024-10-21",
+  "frozen_dataset": "data/frozen/orbench-v2/final_test_dataset.jsonl",
+  "full_manifest": "data/frozen/orbench-v2/final_test_dataset.jsonl",
+  "smoke_manifest": "data/frozen/orbench-v2/smoke_manifest.jsonl",
+  "output_dir": "runs/orbench-reasoning-v2",
+  "expected_dataset_sha256": "c9c36a3ffca082c3e111de3551bab22a400e3ef9bc9cde5dfa9da2e727eac349",
+  "system_prompt": "You are a helpful assistant.",
+  "response_judge_deployment": "gpt-5.5_2026-04-24",
+  "response_judge_reasoning_effort": "medium",
+  "api_retry_count": 2,
+  "call_timeout_seconds": 600,
+  "generation_workers": 160,
+  "judge_workers": 64,
+  "initial_workers_per_deployment": 16,
+  "max_workers_per_deployment": 32,
+  "max_stage_rounds": 100,
+  "qwen_judge_poll_seconds": 30,
+  "languages": ["en", "zh", "ja", "ko", "sv", "da", "ta", "mn", "sw"],
+  "resource_groups": {
+    "high": ["en", "zh", "ja"],
+    "medium": ["ko", "sv", "da"],
+    "low": ["ta", "mn", "sw"]
+  },
+  "conditions": [
+    {
+      "key": "gpt-5.6-sol-none",
+      "family": "gpt-5.6-sol",
+      "effort": "none",
+      "deployment": "gpt-5.6-sol_2026-07-09",
+      "concurrency_group": "gpt-5.6-sol"
+    },
+    {
+      "key": "gpt-5.6-sol-high",
+      "family": "gpt-5.6-sol",
+      "effort": "high",
+      "deployment": "gpt-5.6-sol_2026-07-09",
+      "concurrency_group": "gpt-5.6-sol"
+    },
+    {
+      "key": "gpt-5.5-none",
+      "family": "gpt-5.5",
+      "effort": "none",
+      "deployment": "gpt-5.5_2026-04-24",
+      "concurrency_group": "gpt-5.5"
+    },
+    {
+      "key": "gpt-5.5-high",
+      "family": "gpt-5.5",
+      "effort": "high",
+      "deployment": "gpt-5.5_2026-04-24",
+      "concurrency_group": "gpt-5.5"
+    },
+    {
+      "key": "gpt-5-none",
+      "family": "gpt-5",
+      "effort": "none",
+      "deployment": "gpt-5_2025-08-07",
+      "concurrency_group": "gpt-5"
+    },
+    {
+      "key": "gpt-5-medium",
+      "family": "gpt-5",
+      "effort": "medium",
+      "deployment": "gpt-5_2025-08-07",
+      "concurrency_group": "gpt-5"
+    },
+    {
+      "key": "gpt-5-high",
+      "family": "gpt-5",
+      "effort": "high",
+      "deployment": "gpt-5_2025-08-07",
+      "concurrency_group": "gpt-5"
+    },
+    {
+      "key": "grok-4.1-fast-non-reasoning",
+      "family": "grok-4.1-fast",
+      "effort": "non-reasoning",
+      "deployment": "grok-4-1-fast-non-reasoning_1",
+      "concurrency_group": "grok-4.1-fast-non-reasoning"
+    },
+    {
+      "key": "grok-4.1-fast-reasoning",
+      "family": "grok-4.1-fast",
+      "effort": "reasoning",
+      "deployment": "grok-4-1-fast-reasoning_1",
+      "concurrency_group": "grok-4.1-fast-reasoning"
+    }
+  ],
+  "baselines": [
+    {
+      "key": "gpt-5.6-sol-medium",
+      "family": "gpt-5.6-sol",
+      "effort": "medium",
+      "directory": "runs/orbench-v2/models/gpt-5.6-sol"
+    },
+    {
+      "key": "gpt-5.5-medium",
+      "family": "gpt-5.5",
+      "effort": "medium",
+      "directory": "runs/orbench-v2/models/gpt-5.5"
+    }
+  ]
+}

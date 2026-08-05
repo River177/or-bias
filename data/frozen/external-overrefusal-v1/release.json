@@ -1,0 +1,23 @@
+{
+  "schema_version": "orbias-release-v1",
+  "repository": "River177/or-bias",
+  "tag": "external-overrefusal-v1",
+  "draft": false,
+  "assets": [
+    {"name": "bio_overrefusal.jsonl", "url": "https://github.com/River177/or-bias/releases/download/external-overrefusal-v1/bio_overrefusal.jsonl", "sha256": "2395fe52571a7c4cac84ad2e257c4c5c0c557dd1f5a5ae1f879ceb5f8433330d", "scope": "repo", "destination": "data/frozen/external-overrefusal-v1/datasets/bio_overrefusal.jsonl"},
+    {"name": "xstest.jsonl", "url": "https://github.com/River177/or-bias/releases/download/external-overrefusal-v1/xstest.jsonl", "sha256": "123cbce674c2a05d417a60c0372ba260d8d3a57655fdce2880f97f880170ec67", "scope": "repo", "destination": "data/frozen/external-overrefusal-v1/datasets/xstest.jsonl"},
+    {"name": "oktest.jsonl", "url": "https://github.com/River177/or-bias/releases/download/external-overrefusal-v1/oktest.jsonl", "sha256": "715c0d2cf733b97f8a786eea6af950f4ca68c4f44fca381148bf13f826cea4e2", "scope": "repo", "destination": "data/frozen/external-overrefusal-v1/datasets/oktest.jsonl"},
+    {"name": "phtest.jsonl", "url": "https://github.com/River177/or-bias/releases/download/external-overrefusal-v1/phtest.jsonl", "sha256": "44e457665d2270709f09a869b9cf1030b7eda84806a8ab90a928492dde780071", "scope": "repo", "destination": "data/frozen/external-overrefusal-v1/datasets/phtest.jsonl"},
+    {"name": "falsereject.jsonl", "url": "https://github.com/River177/or-bias/releases/download/external-overrefusal-v1/falsereject.jsonl", "sha256": "b6dee46eb336ad31ba6479225efc7bfdb12d14436ab0fa970445c9b3b738253a", "scope": "repo", "destination": "data/frozen/external-overrefusal-v1/datasets/falsereject.jsonl"},
+    {"name": "manifest.json", "url": "https://github.com/River177/or-bias/releases/download/external-overrefusal-v1/manifest.json", "sha256": "12cb9cd5d607fbd730fb1f4e6deead447385c1c58910e4559a45e273fcdb1647", "scope": "repo", "destination": "data/frozen/external-overrefusal-v1/manifest.json"},
+    {"name": "validation.json", "url": "https://github.com/River177/or-bias/releases/download/external-overrefusal-v1/validation.json", "sha256": "12cb9cd5d607fbd730fb1f4e6deead447385c1c58910e4559a45e273fcdb1647", "scope": "repo", "destination": "data/frozen/external-overrefusal-v1/validation.json"},
+    {"name": "SHA256SUMS", "url": "https://github.com/River177/or-bias/releases/download/external-overrefusal-v1/SHA256SUMS", "sha256": "098ae744ceff9077271b698fae1db35486712758955cc0b9ca9e69d624f847fc", "scope": "repo", "destination": "data/frozen/external-overrefusal-v1/SHA256SUMS"}
+  ],
+  "installed_files": [
+    {"path": "data/frozen/external-overrefusal-v1/datasets/bio_overrefusal.jsonl", "sha256": "2395fe52571a7c4cac84ad2e257c4c5c0c557dd1f5a5ae1f879ceb5f8433330d", "scope": "repo"},
+    {"path": "data/frozen/external-overrefusal-v1/datasets/xstest.jsonl", "sha256": "123cbce674c2a05d417a60c0372ba260d8d3a57655fdce2880f97f880170ec67", "scope": "repo"},
+    {"path": "data/frozen/external-overrefusal-v1/datasets/oktest.jsonl", "sha256": "715c0d2cf733b97f8a786eea6af950f4ca68c4f44fca381148bf13f826cea4e2", "scope": "repo"},
+    {"path": "data/frozen/external-overrefusal-v1/datasets/phtest.jsonl", "sha256": "44e457665d2270709f09a869b9cf1030b7eda84806a8ab90a928492dde780071", "scope": "repo"},
+    {"path": "data/frozen/external-overrefusal-v1/datasets/falsereject.jsonl", "sha256": "b6dee46eb336ad31ba6479225efc7bfdb12d14436ab0fa970445c9b3b738253a", "scope": "repo"}
+  ]
+}
