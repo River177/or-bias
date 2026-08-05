@@ -7,6 +7,7 @@ venv/
 __pycache__/
 .pytest_cache/
 .mypy_cache/
+*.egg-info/
 .DS_Store
 
 # Runtime logs and temporary files
@@ -14,16 +15,8 @@ __pycache__/
 *.tmp
 *.swp
 
-# Large or mutable model artifacts
-experiments/v2/generations*.jsonl
-experiments/v2/response_judgments*.jsonl
-experiments/v2/generation_errors*.jsonl
-experiments/v2/response_judge_errors*.jsonl
-experiments/v2/checkpoint*.jsonl
-experiments/v2/archive/
-experiments/v2/models/
-experiments/v2/full_manifest.jsonl
-experiments/v2/smoke_manifest.jsonl
+# Legacy runtime location; new runs belong in ../or-bias-artifacts
+experiments/
 
 # Downloaded third-party benchmark data and audit artifacts
 data/external/
@@ -35,9 +28,3 @@ archive/legacy-v0-v1/**/*.jsonl
 # Runtime artifact trees live in ../or-bias-artifacts
 artifacts/
 data/frozen/external-overrefusal-v1/datasets/
-experiments/v2/translations.jsonl
-experiments/v2/translation_judgments.jsonl
-
-# Local generated reports
-experiments/v2/summary/*.csv
-experiments/v2/summary/*.md

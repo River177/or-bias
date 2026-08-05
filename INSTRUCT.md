@@ -57,8 +57,8 @@ artifact 根优先级固定为：命令行 `--artifact-root` > `ORBIAS_ARTIFACT_
 
 ## 3. 安装与认证
 
-- Python 3.10 或更高版本；macOS/Linux。
-- 安装：`python3 -m pip install -e .`。
+- Python 3.9 或更高版本；macOS/Linux（当前本地验收使用 3.9.6）。
+- 安装：先执行 `python3 -m pip install --upgrade pip`，再执行 `python3 -m pip install -e .`（需要支持 PEP 660 的 pip）。
 - TRAPI/Azure 身份由本机环境提供；禁止提交 token、credential、cookie 或 `.env`。
 - 运行前必须确认配置里的精确 deployment 可见。
 - 所有 LLM caller 均禁止发送客户端 `max_tokens` 或 `max_completion_tokens`。

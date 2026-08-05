@@ -233,7 +233,7 @@ FalseReject 内部保持 test/train 隔离：先完成 1,187 条 test，再完�
 每套数据独立目录：
 
 ```text
-artifacts/multilingual-v1/
+${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/
   run_manifest.json
   controller_events.jsonl
   controller_state.json

@@ -82,6 +82,16 @@ class TrapiClientTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 client.chat(deployment="model", system="system", user="user", **forbidden)
 
+    def test_all_runtime_callers_omit_client_token_limits(self):
+        root = Path(__file__).resolve().parents[1] / "src" / "orbias"
+        forbidden = ("max" + "_tokens", "max" + "_completion_tokens")
+        for path in root.rglob("*.py"):
+            if path.name == "trapi.py":
+                continue
+            source = path.read_text(encoding="utf-8")
+            for token in forbidden:
+                self.assertNotIn(token, source, str(path))
+
 
 class ArtifactRootTests(unittest.TestCase):
     def test_cli_precedes_environment_and_default(self):

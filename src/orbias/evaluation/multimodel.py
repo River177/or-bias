@@ -489,7 +489,7 @@ def main() -> None:
     args = parser.parse_args()
     CONFIG = args.config.resolve()
     cfg = load_simple_yaml(CONFIG)
-    experiment_dir = Path(str(cfg.get("experiment_dir", "experiments/v2")))
+    experiment_dir = Path(str(cfg.get("experiment_dir", "runs/orbench-v2")))
     EXP = experiment_dir if experiment_dir.is_absolute() else artifact_path(experiment_dir)
     if args.models:
         selected = {key.strip() for key in args.models.split(",") if key.strip()}

@@ -71,24 +71,39 @@ def main() -> None:
         os.environ["ORBIAS_ARTIFACT_ROOT"] = str(resolved_artifact_root)
 
     if args.group == "data":
+        root_overrides: list[str] = []
+        if args.artifact_root is not None:
+            raw_root = resolved_artifact_root / "raw" / "external-overrefusal"
+            if args.action == "prepare":
+                root_overrides = ["--input-root", str(raw_root), "--output-dir", str(raw_root / "selected")]
+            elif args.action == "audit":
+                root_overrides = ["--input", str(raw_root / "selected" / "all_selected.jsonl"), "--output-dir", str(raw_root / "duplicate_audit")]
+            elif args.action == "unify" and args.kind == "external":
+                root_overrides = [
+                    "--input", str(raw_root / "selected" / "all_selected.jsonl"),
+                    "--duplicate-exclusions", str(raw_root / "duplicate_audit" / "internal_duplicate_exclusions.jsonl"),
+                    "--output-dir", str(raw_root / "unified"),
+                ]
         if args.action == "prepare":
-            _invoke(prepare.main, remaining)
+            _invoke(prepare.main, [*root_overrides, *remaining])
         elif args.action == "audit":
-            _invoke(audit_duplicates.main, remaining)
+            _invoke(audit_duplicates.main, [*root_overrides, *remaining])
         elif args.action == "unify":
-            _invoke(unify_orbench.main if args.kind == "orbench" else unify_external.main, remaining)
+            _invoke(unify_orbench.main if args.kind == "orbench" else unify_external.main, [*root_overrides, *remaining])
         else:
             names = ["external-overrefusal-v1", "orbench-v2-audit"] if args.release == "all" else [args.release]
             output = []
             for name in names:
                 values = releases.fetch(name, output_root=resolved_artifact_root) if args.action == "fetch" else releases.verify(name, output_root=resolved_artifact_root)
-                output.append({"release": name, "artifacts": [str(value) for value in values]})
+                artifacts = [str(value) for value in values] if args.action == "fetch" else values
+                output.append({"release": name, "artifacts": artifacts})
             print(json.dumps(output, ensure_ascii=False, indent=2))
         return
 
     if args.group == "translate":
         if args.action == "finalize":
-            _invoke(finalize.main, remaining)
+            output_override = ["--output-root", str(resolved_artifact_root / "releases" / "external-overrefusal-v1" / "frozen")] if args.artifact_root is not None else []
+            _invoke(finalize.main, [*output_override, *remaining])
         else:
             command = {"smoke": "run-smoke", "run": "run-full"}.get(args.action, args.action)
             datasets = [item for value in getattr(args, "dataset", []) for item in ("--dataset", value)]
@@ -108,4 +123,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

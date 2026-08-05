@@ -7,7 +7,7 @@ name = "orbias"
 version = "0.2.0"
 description = "Reproducible multilingual over-refusal benchmark pipelines"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = [
   "PyYAML>=6.0",
   "openai>=1.0",

@@ -619,7 +619,7 @@ def main() -> None:
     parser.add_argument("--repeat-extra", type=int, default=2)
     args = parser.parse_args()
     cfg = load_simple_yaml(args.config)
-    experiment_dir = Path(str(cfg.get("experiment_dir", "experiments/v2")))
+    experiment_dir = Path(str(cfg.get("experiment_dir", "runs/orbench-v2")))
     EXP = experiment_dir if experiment_dir.is_absolute() else artifact_path(experiment_dir)
     frozen_dir = Path(str(cfg.get("frozen_dir", "data/frozen/orbench-v2")))
     FROZEN_DIR = frozen_dir if frozen_dir.is_absolute() else ROOT / frozen_dir

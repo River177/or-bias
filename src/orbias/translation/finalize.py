@@ -10,11 +10,11 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable
 
-from orbias.paths import REPO_ROOT, artifact_root
+from orbias.paths import REPO_ROOT, artifact_root as configured_artifact_root
 
 DEFAULT_CONFIG = REPO_ROOT / "configs" / "experiments" / "external-translation-v1.json"
 DEFAULT_EXCLUSIONS = REPO_ROOT / "configs" / "policies" / "translation-exclusions-v1.json"
-DEFAULT_OUTPUT = artifact_root() / "releases" / "external-overrefusal-v1" / "frozen"
+DEFAULT_OUTPUT = configured_artifact_root() / "releases" / "external-overrefusal-v1" / "frozen"
 JUDGMENT_FIELDS = (
     "semantic_equivalence",
     "task_intent_preserved",
@@ -89,6 +89,8 @@ def unique_by_key(rows: list[dict[str, Any]], path: Path) -> dict[tuple[str, str
 
 
 def resolve_repo_path(value: str, repo_root: Path) -> Path:
+    if value.startswith("artifact:"):
+        return configured_artifact_root() / value.removeprefix("artifact:").lstrip("/")
     path = Path(value)
     return path if path.is_absolute() else repo_root / path
 
@@ -233,8 +235,9 @@ def main() -> None:
     args = parse_args()
     config = json.loads(args.config.read_text(encoding="utf-8"))
     exclusions_payload, approved = approved_exclusions(args.exclusions)
+    run_root = Path(str(config["artifact_root"]))
     artifact_root = args.artifact_root or (
-        resolve_repo_path(str(config["artifact_root"]), args.config.resolve().parent.parent) / "full"
+        (run_root if run_root.is_absolute() else configured_artifact_root() / run_root) / "full"
     )
     selected = set(args.dataset)
     specs = [

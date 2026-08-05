@@ -120,7 +120,7 @@ def main() -> None:
     if args.max_rounds < 1:
         raise SystemExit("--max-rounds must be at least 1")
 
-    experiment_dir = Path(str(cfg.get("experiment_dir", "experiments/v2")))
+    experiment_dir = Path(str(cfg.get("experiment_dir", "runs/orbench-v2")))
     if not experiment_dir.is_absolute():
         experiment_dir = artifact_path(experiment_dir)
 

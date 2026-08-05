@@ -28,7 +28,7 @@
 | OverBench | Hard，已去重 | 29,969 | 239,752 | evaluation；当前未完成 |
 | Health-ORSC-Bench | benign full | 31,920 | 255,360 | evaluation；当前未开始 |
 
-七套新增数据共 80,563 条 English source record，对应每阶段 `80,563 × 8 = 644,504` 个语言条件。源数据统一 schema、去重规则和 provenance 见 `docs/UNIFIED_EXTERNAL_DATASETS.md`。OR-Bench 的 1,319 条源记录及既有翻译/审核结果单独复用。
+七套新增数据共 80,563 条 English source record，对应每阶段 `80,563 × 8 = 644,504` 个语言条件。源数据统一 schema、去重规则和 provenance 见 `docs/datasets/unified-external-datasets.md`。OR-Bench 的 1,319 条源记录及既有翻译/审核结果单独复用。
 
 数据集按 English row 数量从小到大运行。每个成功结果以 `(dataset, record_id, language)` 为稳定唯一键，append-only 写入；断点恢复只补缺失成功键，不覆盖已有成功结果。
 
@@ -257,19 +257,19 @@ FalseReject 的 strict-keep pair 分母仍使用完整预期 126,488，因此两
 - 远程 runner：`scripts/multilingual_translation_runner.py`
 - 最终导出器：`scripts/finalize_multilingual_translation.py`
 - 导出器测试：`tests/test_finalize_multilingual_translation.py`
-- 数据统一说明：`docs/UNIFIED_EXTERNAL_DATASETS.md`
+- 数据统一说明：`docs/datasets/unified-external-datasets.md`
 
 ### 本地 raw artifacts
 
 ```text
-artifacts/multilingual-v1/full/<dataset>/translations.jsonl
-artifacts/multilingual-v1/full/<dataset>/translation_judgments.jsonl
-artifacts/multilingual-v1/full/<dataset>/*_errors.jsonl
-artifacts/multilingual-v1/full/<dataset>/*_attempt_errors.jsonl
-artifacts/multilingual-v1/full/<dataset>/manifest.json
-artifacts/multilingual-v1/full/controller_events.jsonl
-artifacts/multilingual-v1/full/run_manifest.json
-artifacts/multilingual-v1/prior-recovery-round-*.log
+${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/full/<dataset>/translations.jsonl
+${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/full/<dataset>/translation_judgments.jsonl
+${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/full/<dataset>/*_errors.jsonl
+${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/full/<dataset>/*_attempt_errors.jsonl
+${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/full/<dataset>/manifest.json
+${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/full/controller_events.jsonl
+${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/full/run_manifest.json
+${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/prior-recovery-round-*.log
 ```
 
 ### 最终筛选数据：一个数据集一个文件
@@ -286,19 +286,19 @@ artifacts/multilingual-v1/prior-recovery-round-*.log
 
 `artifacts/` 中保留同内容的导出工作副本和完整 raw 审计材料：
 
-- `artifacts/multilingual-v1/final/datasets/bio_overrefusal.jsonl`：122 行
-- `artifacts/multilingual-v1/final/datasets/xstest.jsonl`：151 行
-- `artifacts/multilingual-v1/final/datasets/oktest.jsonl`：218 行
-- `artifacts/multilingual-v1/final/datasets/phtest.jsonl`：1,067 行
-- `artifacts/multilingual-v1/final/datasets/falsereject.jsonl`：9,231 行
-- `artifacts/multilingual-v1/final/manifest.json`：行数、用途构成和 SHA256
-- `artifacts/multilingual-v1/prior-five-validation.json`：前五套验收快照
-- `artifacts/multilingual-v1/prior-five-artifact-manifest.json`：38 个同步文件的大小、行数和 SHA256；总大小 800,606,488 bytes
+- `${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/final/datasets/bio_overrefusal.jsonl`：122 行
+- `${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/final/datasets/xstest.jsonl`：151 行
+- `${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/final/datasets/oktest.jsonl`：218 行
+- `${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/final/datasets/phtest.jsonl`：1,067 行
+- `${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/final/datasets/falsereject.jsonl`：9,231 行
+- `${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/final/manifest.json`：行数、用途构成和 SHA256
+- `${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/prior-five-validation.json`：前五套验收快照
+- `${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/prior-five-artifact-manifest.json`：38 个同步文件的大小、行数和 SHA256；总大小 800,606,488 bytes
 
 本地与远端 10 个关键 `translations.jsonl` / `translation_judgments.jsonl` 文件已逐文件比较 SHA256，全部一致。
 
 远端 artifacts 位于：
 
 ```text
-gcr-a100:/home/v-wuhao1/or-bias-runs/multilingual-v1/code/artifacts/multilingual-v1/
+gcr-a100:/home/v-wuhao1/or-bias-runs/multilingual-v1/code/${ORBIAS_ARTIFACT_ROOT}/runs/external-translation-v1/
 ```

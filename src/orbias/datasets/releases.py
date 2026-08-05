@@ -5,8 +5,10 @@ from __future__ import annotations
 import hashlib
 import json
 import shutil
+import subprocess
 import tarfile
 import tempfile
+import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -42,7 +44,10 @@ def _safe_extract(archive: Path, destination: Path) -> None:
             target = (destination / member.name).resolve()
             if target != root and root not in target.parents:
                 raise ValueError(f"Unsafe archive member: {member.name}")
-        handle.extractall(destination, filter="data")
+        try:
+            handle.extractall(destination, filter="data")
+        except TypeError:  # Python 3.9-3.11: members were validated above.
+            handle.extractall(destination)
 
 
 def fetch(name: str, *, output_root: Path | None = None) -> list[Path]:
@@ -56,9 +61,23 @@ def fetch(name: str, *, output_root: Path | None = None) -> list[Path]:
         with tempfile.NamedTemporaryFile(dir=destination.parent, delete=False) as temporary:
             temporary_path = Path(temporary.name)
         try:
-            with urllib.request.urlopen(str(asset["url"]), timeout=120) as response:
-                with temporary_path.open("wb") as handle:
-                    shutil.copyfileobj(response, handle)
+            try:
+                with urllib.request.urlopen(str(asset["url"]), timeout=120) as response:
+                    with temporary_path.open("wb") as handle:
+                        shutil.copyfileobj(response, handle)
+            except urllib.error.HTTPError as exc:
+                if exc.code != 404 or not metadata.get("draft"):
+                    raise
+                subprocess.run(
+                    [
+                        "gh", "release", "download", str(metadata["tag"]),
+                        "--repo", str(metadata["repository"]),
+                        "--pattern", str(asset["name"]),
+                        "--output", str(temporary_path),
+                        "--clobber",
+                    ],
+                    check=True,
+                )
             actual = sha256(temporary_path)
             if actual != asset["sha256"]:
                 raise ValueError(f"SHA256 mismatch for {asset['name']}: {actual}")

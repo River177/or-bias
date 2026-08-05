@@ -77,7 +77,7 @@ def main() -> None:
 
     config = args.config.resolve()
     cfg = multimodel.load_simple_yaml(config)
-    experiment_dir = Path(str(cfg.get("experiment_dir", "experiments/v2")))
+    experiment_dir = Path(str(cfg.get("experiment_dir", "runs/orbench-v2")))
     if not experiment_dir.is_absolute():
         experiment_dir = artifact_path(experiment_dir)
     output_dir = experiment_dir / "summary"
