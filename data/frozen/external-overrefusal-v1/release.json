@@ -2,7 +2,7 @@
   "schema_version": "orbias-release-v1",
   "repository": "River177/or-bias",
   "tag": "external-overrefusal-v1",
-  "draft": true,
+  "draft": false,
   "assets": [
     {"name": "bio_overrefusal.jsonl", "url": "https://github.com/River177/or-bias/releases/download/external-overrefusal-v1/bio_overrefusal.jsonl", "sha256": "2395fe52571a7c4cac84ad2e257c4c5c0c557dd1f5a5ae1f879ceb5f8433330d", "scope": "repo", "destination": "data/frozen/external-overrefusal-v1/datasets/bio_overrefusal.jsonl"},
     {"name": "xstest.jsonl", "url": "https://github.com/River177/or-bias/releases/download/external-overrefusal-v1/xstest.jsonl", "sha256": "123cbce674c2a05d417a60c0372ba260d8d3a57655fdce2880f97f880170ec67", "scope": "repo", "destination": "data/frozen/external-overrefusal-v1/datasets/xstest.jsonl"},
